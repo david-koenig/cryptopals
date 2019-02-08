@@ -1,8 +1,14 @@
 ARGS=-Wall -Werror -g
 GCC=gcc $(ARGS)
 GPP=g++ -std=gnu++0x $(ARGS)
+
+ifeq ($(OPENSSL_ROOT_DIR),)
+OPENSSL_INCLUDE=
+OPENSSL=-lcrypto
+else
 OPENSSL_INCLUDE=-I$(OPENSSL_ROOT_DIR)/include
 OPENSSL=$(OPENSSL_INCLUDE) -L$(OPENSSL_ROOT_DIR)/lib -lcrypto
+endif
 
 all: test set1 set2 set3 set4
 
@@ -112,11 +118,11 @@ set4_challenge26: set4_challenge26.cpp cryptopals_utils.o cryptopals.o cryptopal
 set4_challenge27: set4_challenge27.cpp cryptopals_utils.o cryptopals.o cryptopals_random.o cryptopals_profile.o cryptopals_uri.o
 	$(GPP) -o $@ $^ $(OPENSSL)
 
-set4_challenge28: set4_challenge28.c cryptopals_utils.o cryptopals_mac.o sha1.o
-	$(GCC) -o $@ $^
+set4_challenge28: set4_challenge28.c cryptopals_utils.o cryptopals_mac.o sha1.o cryptopals.o cryptopals_random.o
+	$(GCC) -o $@ $^ $(OPENSSL)
 
-set4_challenge29: set4_challenge29.c cryptopals_utils.o cryptopals_mac.o sha1.o
-	$(GCC) -o $@ $^
+set4_challenge29: set4_challenge29.c cryptopals_utils.o cryptopals_mac.o sha1.o cryptopals.o cryptopals_random.o
+	$(GCC) -o $@ $^ $(OPENSSL)
 
 cryptopals_utils.o: cryptopals_utils.c cryptopals_utils.h
 	$(GCC) -c cryptopals_utils.c

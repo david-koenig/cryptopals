@@ -1,13 +1,28 @@
 #pragma once
 #include "cryptopals_utils.h"
 
-// Calculates a secret-prefix MAC: SHA1(key || message). Allocates byte array for result.
-byte_array * sha1_mac(const byte_array * key, const byte_array * message);
+// sets up random mac key of random length
+void init_random_mac_key(int seed);
 
-// Adds SHA1 padding to message, allocating a new byte array for result.
-// Padding consists of a 1 bit, followed by zeroes, followed by a 64 bit
-// integer which is the length of the unpadded message in BITS, such
-// that the end result is a multiple of 512 bits, the SHA1 block size.
-// Tthis implementation only works for multiples of 8 bits, as it assumes
-// that the input byte array is exactly the length of the message.
-byte_array * sha1_pad(const byte_array * message);
+// deallocates random mac key
+void cleanup_random_mac_key();
+
+// Calculates a secret-prefix MAC: SHA1(key || message). Allocates byte array for result.
+// Attacker does not have access to this function.
+byte_array * sha1_mac(const byte_array * message);
+
+// Returns true if sha1_mac(message) == mac
+// Attacker does have access to this function.
+bool check_message_sha1_mac(const byte_array * message, const byte_array * mac);
+
+/* Produces a byte array of just the SHA1 padding bytes for a message
+ * of the specified length in bytes. This implementation assumes the
+ * message length is always a whole number of bytes.
+ *
+ * Padding consists of a 1 bit, followed by zeroes, followed by a 64 bit
+ * integer which is the length of the unpadded message in BITS, such
+ * that the end result is a multiple of 512 bits, the SHA1 block size.
+ * This implementation only works for multiples of 8 bits, as it assumes
+ * that the input byte array is exactly the length of the message.
+ */
+byte_array * sha1_pad(uint64_t len_in_bytes);

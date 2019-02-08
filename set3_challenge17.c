@@ -160,7 +160,7 @@ int main(int argc, char ** argv) {
          * to affect first block of plain. first_block_cipher takes place of spoof here, which is a constant
          * bit array, because all the manipulation happens to the IV.
          */
-        assert(plain_idx = 15);
+        assert(plain_idx == 15);
 
         const byte_array * first_block_cipher = sub_byte_array(cipher, 0, 16);
         byte_array * spoof_iv = copy_byte_array(iv);

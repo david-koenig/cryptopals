@@ -64,6 +64,9 @@ typedef struct SHA1Context
  */
 
 int SHA1Reset(  SHA1Context *);
+
+int SHA1Reset_hack(SHA1Context *, uint64_t, uint8_t *);
+
 int SHA1Input(  SHA1Context *,
                 const uint8_t *,
                 unsigned int);

@@ -79,15 +79,31 @@ int SHA1Reset(SHA1Context *context)
     return shaSuccess;
 }
 
-int SHA1Reset_add_on(SHA1Context *context, uint8_t *start)
+/* SHA1Reset_hack
+ *
+ * Description:
+ *     Reset a SHA1Context with an arbitrary state so you can perform
+ *     length extension attacks.
+ *
+ * Parameters:
+ *     context: The context to reset.
+ *
+ *     num_blocks_guess:  Your guess at the number of 64-byte blocks
+ *                        of the shorter message that was hashed (with padding)
+ *
+ *     start:   Point this to the already calculated digest value of the shorter
+ *              message that you are trying to extend.
+ */
+int SHA1Reset_hack(SHA1Context *context, uint64_t num_blocks_guess, uint8_t *start)
 {
     if (!context)
     {
         return shaNull;
     }
 
-    context->Length_Low             = 0;
-    context->Length_High            = 0;
+    uint64_t len_bits = num_blocks_guess << 9;
+    context->Length_Low             = (uint32_t)len_bits;
+    context->Length_High            = (uint32_t)(len_bits >> 32);
     context->Message_Block_Index    = 0;
 
     context->Computed   = 0;
@@ -96,8 +112,8 @@ int SHA1Reset_add_on(SHA1Context *context, uint8_t *start)
     int idx;
     for (idx = 0; idx < 5; idx++) {
         context->Intermediate_Hash[idx] =
-            ((uint32_t)start[4*idx] << 24) | ((uint32_t)start[4*idx + 1] << 16)
-            | ((uint32_t)start[4*idx + 2] << 8) | (uint32_t)start[4*idx + 3];
+            ((uint32_t)(start[4*idx]) << 24) | ((uint32_t)(start[4*idx + 1]) << 16)
+            | ((uint32_t)(start[4*idx + 2]) << 8) | (uint32_t)(start[4*idx + 3]);
     }
 
     return shaSuccess;
