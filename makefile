@@ -12,7 +12,7 @@ endif
 
 all: test set1 set2 set3 set4
 
-test: aes_128_ecb_test sha1test
+test: aes_128_ecb_test sha1test md4test
 
 set1: set1_challenge1 set1_challenge2 set1_challenge3 set1_challenge4 set1_challenge5 set1_challenge6a set1_challenge6b set1_challenge6c set1_challenge7 set1_challenge8
 
@@ -26,6 +26,9 @@ aes_128_ecb_test: aes_128_ecb_test.c cryptopals_utils.o cryptopals.o
 	$(GCC) -o $@ $^ $(OPENSSL)
 
 sha1test: sha1test.c sha1.o
+	$(GCC) -o $@ $^
+
+md4test: mddriver.c md4c.o
 	$(GCC) -o $@ $^
 
 set1_challenge1: set1_challenge1.c cryptopals_utils.o
@@ -150,6 +153,9 @@ cryptopals_mac.o: cryptopals_mac.c cryptopals_mac.h
 
 sha1.o: sha1.c sha1.h
 	$(GCC) -c sha1.c
+
+md4c.o: md4c.c md4.h md4_global.h
+	$(GCC) -c md4c.c
 
 clean:
 	rm -f *test set[1-3]_challenge[1-9] set1_challenge6[a-c] set[1-3]_challenge1[0-9] set[3-4]_challenge[2-3][0-9] set3_challenge24[a-b] *.o
