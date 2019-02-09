@@ -95,6 +95,22 @@ MD4_CTX *context;                                        /* context */
   context->state[3] = 0x10325476;
 }
 
+
+void MD4Init_hack (context, num_blocks_guess, start)
+MD4_CTX *context;
+uint64_t num_blocks_guess;
+uint8_t *start;
+{
+    uint64_t len_bits = num_blocks_guess << 9;
+    context->count[0] = (uint32_t)len_bits;
+    context->count[1] = (uint32_t)(len_bits >> 32);
+
+    int idx;
+    for (idx = 0; idx < 4; idx++) {
+        context->state[idx] = *((uint32_t *)start + idx);
+    }
+}
+
 /* MD4 block update operation. Continues an MD4 message-digest
      operation, processing another message block, and updating the
      context.

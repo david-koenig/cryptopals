@@ -30,7 +30,7 @@
  */
 
 #include "sha1.h"
-
+#include <arpa/inet.h>
 /*
  *  Define the SHA1 circular left shift macro
  */
@@ -111,9 +111,7 @@ int SHA1Reset_hack(SHA1Context *context, uint64_t num_blocks_guess, uint8_t *sta
 
     int idx;
     for (idx = 0; idx < 5; idx++) {
-        context->Intermediate_Hash[idx] =
-            ((uint32_t)(start[4*idx]) << 24) | ((uint32_t)(start[4*idx + 1]) << 16)
-            | ((uint32_t)(start[4*idx + 2]) << 8) | (uint32_t)(start[4*idx + 3]);
+        context->Intermediate_Hash[idx] = htonl(*((uint32_t *)start + idx));
     }
 
     return shaSuccess;

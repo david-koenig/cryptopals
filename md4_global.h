@@ -1,3 +1,4 @@
+#pragma once
 /* GLOBAL.H - RSAREF types and constants
  */
 #include <stdint.h>

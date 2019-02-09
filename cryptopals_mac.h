@@ -11,9 +11,16 @@ void cleanup_random_mac_key();
 // Attacker does not have access to this function.
 byte_array * sha1_mac(const byte_array * message);
 
+// Same thing but MD4(key || message)
+byte_array * md4_mac(const byte_array * message);
+
 // Returns true if sha1_mac(message) == mac
 // Attacker does have access to this function.
 bool check_message_sha1_mac(const byte_array * message, const byte_array * mac);
+
+// Returns true if md4_mac(message) == mac
+// Attacker does have access to this function.
+bool check_message_md4_mac(const byte_array * message, const byte_array * mac);
 
 /* Produces a byte array of just the SHA1 padding bytes for a message
  * of the specified length in bytes. This implementation assumes the
@@ -26,3 +33,6 @@ bool check_message_sha1_mac(const byte_array * message, const byte_array * mac);
  * that the input byte array is exactly the length of the message.
  */
 byte_array * sha1_pad(uint64_t len_in_bytes);
+
+// MD4 uses same padding as SHA1, except padding stores length in little endian.
+byte_array * md4_pad(uint64_t len_in_bytes);

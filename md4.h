@@ -22,6 +22,8 @@
    These notices must be retained in any copies of any part of this
    documentation and/or software.
  */
+#pragma once
+#include "md4_global.h"
 
 /* MD4 context. */
 typedef struct {
@@ -31,6 +33,7 @@ typedef struct {
 } MD4_CTX;
 
 void MD4Init PROTO_LIST ((MD4_CTX *));
+void MD4Init_hack PROTO_LIST ((MD4_CTX *, uint64_t, uint8_t *));
 void MD4Update PROTO_LIST
   ((MD4_CTX *, unsigned char *, unsigned int));
 void MD4Final PROTO_LIST ((unsigned char [16], MD4_CTX *));

@@ -20,7 +20,7 @@ set2: set2_challenge9 set2_challenge10 set2_challenge11 set2_challenge12 set2_ch
 
 set3: set3_challenge17 set3_challenge18 set3_challenge19 set3_challenge20 set3_challenge21 set3_challenge22 set3_challenge23 set3_challenge24a set3_challenge24b
 
-set4: set4_challenge25 set4_challenge26 set4_challenge27 set4_challenge28 set4_challenge29
+set4: set4_challenge25 set4_challenge26 set4_challenge27 set4_challenge28 set4_challenge29 set4_challenge30
 
 aes_128_ecb_test: aes_128_ecb_test.c cryptopals_utils.o cryptopals.o
 	$(GCC) -o $@ $^ $(OPENSSL)
@@ -121,10 +121,13 @@ set4_challenge26: set4_challenge26.cpp cryptopals_utils.o cryptopals.o cryptopal
 set4_challenge27: set4_challenge27.cpp cryptopals_utils.o cryptopals.o cryptopals_random.o cryptopals_profile.o cryptopals_uri.o
 	$(GPP) -o $@ $^ $(OPENSSL)
 
-set4_challenge28: set4_challenge28.c cryptopals_utils.o cryptopals_mac.o sha1.o cryptopals.o cryptopals_random.o
+set4_challenge28: set4_challenge28.c cryptopals_utils.o cryptopals_mac.o sha1.o md4c.o cryptopals.o cryptopals_random.o
 	$(GCC) -o $@ $^ $(OPENSSL)
 
-set4_challenge29: set4_challenge29.c cryptopals_utils.o cryptopals_mac.o sha1.o cryptopals.o cryptopals_random.o
+set4_challenge29: set4_challenge29.c cryptopals_utils.o cryptopals_mac.o sha1.o md4c.o cryptopals.o cryptopals_random.o
+	$(GCC) -o $@ $^ $(OPENSSL)
+
+set4_challenge30: set4_challenge30.c cryptopals_utils.o cryptopals_mac.o sha1.o md4c.o cryptopals.o cryptopals_random.o
 	$(GCC) -o $@ $^ $(OPENSSL)
 
 cryptopals_utils.o: cryptopals_utils.c cryptopals_utils.h
