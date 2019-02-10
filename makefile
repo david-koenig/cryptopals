@@ -10,7 +10,7 @@ OPENSSL_INCLUDE=-I$(OPENSSL_ROOT_DIR)/include
 OPENSSL=$(OPENSSL_INCLUDE) -L$(OPENSSL_ROOT_DIR)/lib -lcrypto
 endif
 
-all: test set1 set2 set3 set4
+all: test set1 set2 set3 set4 set5
 
 test: aes_128_ecb_test sha1test md4test
 
@@ -21,6 +21,8 @@ set2: set2_challenge9 set2_challenge10 set2_challenge11 set2_challenge12 set2_ch
 set3: set3_challenge17 set3_challenge18 set3_challenge19 set3_challenge20 set3_challenge21 set3_challenge22 set3_challenge23 set3_challenge24a set3_challenge24b
 
 set4: set4_challenge25 set4_challenge26 set4_challenge27 set4_challenge28 set4_challenge29 set4_challenge30
+
+set5: set5_challenge33
 
 aes_128_ecb_test: aes_128_ecb_test.c cryptopals_utils.o cryptopals.o
 	$(GCC) -o $@ $^ $(OPENSSL)
@@ -130,6 +132,9 @@ set4_challenge29: set4_challenge29.c cryptopals_utils.o cryptopals_mac.o sha1.o 
 set4_challenge30: set4_challenge30.c cryptopals_utils.o cryptopals_mac.o sha1.o md4c.o cryptopals.o cryptopals_random.o
 	$(GCC) -o $@ $^ $(OPENSSL)
 
+set5_challenge33: set5_challenge33.c
+	$(GCC) -o $@ $^ -lgmp
+
 cryptopals_utils.o: cryptopals_utils.c cryptopals_utils.h
 	$(GCC) -c cryptopals_utils.c
 
@@ -161,5 +166,5 @@ md4c.o: md4c.c md4.h md4_global.h
 	$(GCC) -c md4c.c
 
 clean:
-	rm -f *test set[1-3]_challenge[1-9] set1_challenge6[a-c] set[1-3]_challenge1[0-9] set[3-4]_challenge[2-3][0-9] set3_challenge24[a-b] *.o
+	rm -f *test set[1-2]_challenge[1-9] set1_challenge6[a-c] set[2-5]_challenge[1-3][0-9] set3_challenge24[a-b] *.o
 	rm -rf *.dSYM
