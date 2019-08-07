@@ -42,7 +42,7 @@ to any other value to have an equivalent example of the attack. The only excepti
 I have chosen different random seeds to illustrate different code paths. (See set 2 challenge 11,
 though the particular seeds I have chosen might not have the effect of portably reaching different paths.)
 
-For easily portability and not having to take extra dependencies, I'm just using the C standard library
+For easy portability and not having to take extra dependencies, I'm just using the C standard library
 `random()` to help generate different test cases. The cryptographic strength or weakness of `random()` is
 not the point of any of these exercises. Note that there are a few attacks which are about attacking
 *other* RNGs in the code.
