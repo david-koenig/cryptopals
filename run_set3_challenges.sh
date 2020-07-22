@@ -1,8 +1,6 @@
 #!/bin/sh
 set -e
 
-make set3
-
 CMD17='./set3_challenge17 385438'
 CMD18='./set3_challenge18'
 CMD19='./set3_challenge19 1916'

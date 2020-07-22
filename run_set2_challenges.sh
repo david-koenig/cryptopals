@@ -1,8 +1,6 @@
 #!/bin/sh
 set -e
 
-make set2
-
 CMD9='./set2_challenge9 "YELLOW SUBMARINE" 20'
 CMD10='./set2_challenge10 10.txt'
 CMD11A='./set2_challenge11 8675309'

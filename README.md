@@ -1,26 +1,29 @@
 # Cryptopals Challenge Solutions
 
 This package contains a set of solutions to the Cryptopals challenges at https://cryptopals.com/.
-It is a work in progress. The solutions are written in C and C++, and the package is built with a
-simple makefile.
+It is a work in progress. The solutions are written in C and C++, and the package is built with CMake.
 
-This package depends on gcc, g++, the OpenSSL C libraries, and the GNU Multi-Precision library. (GMP)
+Dependencies are C and C++ compilers, CMake, the OpenSSL C libraries, and the GNU Multi-Precision
+library. (GMP)
 
 To install these dependencies on Ubuntu:
 
-    sudo apt-get install g++ libssl-dev libgmp-dev
+    sudo apt-get install g++ libssl-dev libgmp-dev cmake
 
 To install them on Amazon Linux or other yum-based systems:
 
-    sudo yum install gcc-c++ openssl-devel gmp-devel
+    sudo yum install gcc-c++ openssl-devel gmp-devel cmake
 
-If OpenSSL is not in a place where your compiler will automatically find it,
-set the environmental variable `OPENSSL_ROOT_DIR` before building. For example:
+Here is an example build recipe using OpenSSL installed in a nonstandard place (as Brew does on Mac),
+starting from the parent directory of cryptopals.
 
-    export OPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1
+    mkdir cryptopals_build
+    cd cryptopals_build
+    cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1 ../cryptopals
+    cmake --build .
 
-There are scripts called `run_set1_challenges.sh`, etc., which will automatically build the challenges
-in that set and run the binaries with command lines that demonstrate the solutions.
+There are scripts called `run_set1_challenges.sh`, etc., which will automatically run the binaries
+with command lines that demonstrate the solutions.
 
 Each binary can also be run with no arguments to produce a usage statement.
 
