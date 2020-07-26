@@ -60,6 +60,21 @@ dh_params prehandshake(const char * p_hex_str, unsigned int g) {
     return params;
 }
 
+dh_public_params * hacked_params(const char * p_hex_str, unsigned int g) {
+    dh_public_params * public = malloc(sizeof(dh_public_params));
+    mpz_init_set_str(public->p, p_hex_str, 16);
+    mpz_init_set(public->key, public->p);
+    mpz_init_set_ui(public->g, g);
+    return public;
+}
+
+void free_hacked_params(dh_public_params * public) {
+    mpz_clear(public->key);
+    mpz_clear(public->p);
+    mpz_clear(public->g);
+    free(public);
+}
+
 // shared secret written as hex string to aid in deriving key
 static void calculate_shared_secret(dh_params params, const mpz_t * other_side_public_key) {
     mpz_t secret;

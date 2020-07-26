@@ -15,21 +15,17 @@ file(COPY ${run_scripts} DESTINATION ${PROJECT_BINARY_DIR})
 file(GLOB data_files "${PROJECT_SOURCE_DIR}/[0-9]*.txt")
 file(COPY ${data_files} DESTINATION ${PROJECT_BINARY_DIR})
 
+file(GLOB cryptopals_clib "cryptopals*.c")
 add_library(Cryptopals
-  cryptopals.c
-  cryptopals_attack.c
-  cryptopals_derived_key.c
-  cryptopals_dh.c
-  cryptopals_mac.c
-  cryptopals_random.c
-  cryptopals_utils.c
+  ${cryptopals_clib}
   md4c.c
   sha1.c
   )
 target_link_libraries(Cryptopals ${OPENSSL_CRYPTO_LIBRARY} ${Gmp})
 target_include_directories(Cryptopals PRIVATE ${OPENSSL_INCLUDE_DIR} ${Gmp_path})
 
-add_library(Cryptopals_cpp cryptopals_mersenne.cpp cryptopals_profile.cpp cryptopals_uri.cpp)
+file(GLOB cryptopals_cpplib "cryptopals*.cpp")
+add_library(Cryptopals_cpp ${cryptopals_cpplib})
 
 link_libraries(Cryptopals)
 

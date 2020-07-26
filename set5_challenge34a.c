@@ -25,7 +25,7 @@ byte_array * decrypt(const byte_array * cipher, const byte_array * key) {
 
 int main(int argc, char ** argv) {
     if (argc != 2) {
-        fprintf(stderr, "Usage: %s seed\nDiffie-Helman exchange\n", argv[0]);
+        fprintf(stderr, "Usage: %s seed\nNormal Diffie-Helman exchange\n", argv[0]);
         return 1;
     }
     init_random_encrypt(atoi(argv[1]));
@@ -40,7 +40,7 @@ int main(int argc, char ** argv) {
         "bb9ed529077096966d670c354e4abc9804f1746c08ca237327fff"
         "fffffffffffff";
     const unsigned int generator = 2;
-    
+
     dh_params initiator_params = prehandshake(modulus, generator);
     dh_params responder_params = handshake1(initiator_params.public);
     handshake2(initiator_params, responder_params.public);
@@ -63,8 +63,7 @@ int main(int argc, char ** argv) {
     print_byte_array_ascii(redecryption);
     assert(byte_arrays_equal(message, redecryption));
     printf("Response matches!\n");
-
-    cleanup_random_encrypt();
+    
     free_dh_params(initiator_params);
     free_dh_params(responder_params);
     free_byte_array(message);
@@ -74,5 +73,6 @@ int main(int argc, char ** argv) {
     free_byte_array(decryption);
     free_byte_array(reencryption);
     free_byte_array(redecryption);
+    cleanup_random_encrypt();
     return 0;
 }

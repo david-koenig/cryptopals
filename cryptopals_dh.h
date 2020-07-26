@@ -26,3 +26,10 @@ void handshake2(dh_params params, const dh_public_params * responder_public);
 
 char * get_shared_secret(const dh_params params);
 int get_shared_secret_len(const dh_params params);
+
+// Create a public params struct with public key same as modulus.
+// Used by man-in-the-middle hacker.
+dh_public_params * hacked_params(const char * p_hex_str, unsigned int g);
+
+// Free memory of hacked parameters object.
+void free_hacked_params(dh_public_params * public);
