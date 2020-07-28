@@ -41,7 +41,7 @@ int main(int argc, char ** argv) {
         "fffffffffffff";
     const unsigned int generator = 2;
 
-    // Initiator generates parametes for handshake.
+    // Initiator generates parameters for handshake.
     dh_params initiator_params = prehandshake(modulus, generator);
 
     // Attacker receives public parameters and uses them to generate
