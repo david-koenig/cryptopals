@@ -1,4 +1,5 @@
 #include "cryptopals_random.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 const size_t RANDOM_BYTE_ARRAY_MAX_LEN = 100;
@@ -174,4 +175,23 @@ bool padding_oracle_decrypt(const byte_array * cipher, const byte_array * my_iv)
 
 bool guess_key(const byte_array * guess) {
     return byte_arrays_equal(key, guess);
+}
+
+byte_array * encrypt_aes_128_cbc_prepend_iv(const byte_array * plaintext, const byte_array * key) {
+    byte_array * iv = random_128_bits();
+    byte_array * cipher = encrypt_aes_128_cbc(plaintext, key, iv);
+    byte_array * encryption = append_byte_arrays(iv, cipher);
+    free_byte_array(iv);
+    free_byte_array(cipher);
+    return encryption;
+}
+
+byte_array * decrypt_aes_128_cbc_prepend_iv(const byte_array * cipher, const byte_array * key) {
+    if (cipher->len < 16) {
+        fprintf(stderr, "%s: cipher too short\n", __func__);
+        exit(1);
+    }
+    byte_array iv = {cipher->bytes, 16};
+    byte_array cipher_without_iv = {cipher->bytes+16, cipher->len-16};
+    return decrypt_aes_128_cbc(&cipher_without_iv, key, &iv);
 }

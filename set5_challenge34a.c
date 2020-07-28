@@ -8,21 +8,6 @@
 #include "cryptopals.h"
 #include "cryptopals_random.h"
 
-byte_array * encrypt(const byte_array * plaintext, const byte_array * key) {
-    byte_array * iv = random_128_bits();
-    byte_array * cipher = encrypt_aes_128_cbc(plaintext, key, iv);
-    byte_array * encryption = append_byte_arrays(iv, cipher);
-    free_byte_array(iv);
-    free_byte_array(cipher);
-    return encryption;
-}
-
-byte_array * decrypt(const byte_array * cipher, const byte_array * key) {
-    byte_array iv = {cipher->bytes, 16};
-    byte_array cipher_without_iv = {cipher->bytes+16, cipher->len-16};
-    return decrypt_aes_128_cbc(&cipher_without_iv, key, &iv);
-}
-
 int main(int argc, char ** argv) {
     if (argc != 2) {
         fprintf(stderr, "Usage: %s seed\nNormal Diffie-Helman exchange\n", argv[0]);
@@ -48,15 +33,15 @@ int main(int argc, char ** argv) {
     // initiator sends a message to responder
     byte_array * message = cstring_to_bytes("Sending out an SOS. Message in a bottle.");
     byte_array * initiator_key = derive_key(get_shared_secret(initiator_params));
-    byte_array * encryption = encrypt(message, initiator_key);
+    byte_array * encryption = encrypt_aes_128_cbc_prepend_iv(message, initiator_key);
 
     // responder decrypts message then echoes it back, encrypted with its own IV
     byte_array * responder_key = derive_key(get_shared_secret(responder_params));
-    byte_array * decryption = decrypt(encryption, responder_key);
-    byte_array * reencryption = encrypt(decryption, responder_key);
+    byte_array * decryption = decrypt_aes_128_cbc_prepend_iv(encryption, responder_key);
+    byte_array * reencryption = encrypt_aes_128_cbc_prepend_iv(decryption, responder_key);
 
     // initiator decrypts message from responder and prints out both original message and response
-    byte_array * redecryption = decrypt(reencryption, initiator_key);
+    byte_array * redecryption = decrypt_aes_128_cbc_prepend_iv(reencryption, initiator_key);
     printf("Sent     : ");
     print_byte_array_ascii(message);
     printf("Received : ");

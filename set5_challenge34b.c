@@ -8,21 +8,6 @@
 #include "cryptopals.h"
 #include "cryptopals_random.h"
 
-byte_array * encrypt(const byte_array * plaintext, const byte_array * key) {
-    byte_array * iv = random_128_bits();
-    byte_array * cipher = encrypt_aes_128_cbc(plaintext, key, iv);
-    byte_array * encryption = append_byte_arrays(iv, cipher);
-    free_byte_array(iv);
-    free_byte_array(cipher);
-    return encryption;
-}
-
-byte_array * decrypt(const byte_array * cipher, const byte_array * key) {
-    byte_array iv = {cipher->bytes, 16};
-    byte_array cipher_without_iv = {cipher->bytes+16, cipher->len-16};
-    return decrypt_aes_128_cbc(&cipher_without_iv, key, &iv);
-}
-
 int main(int argc, char ** argv) {
     if (argc != 2) {
         fprintf(stderr, "Usage: %s seed\nMITM key-fixing attack on Diffie-Helman exchange\n", argv[0]);
@@ -62,32 +47,32 @@ int main(int argc, char ** argv) {
     printf("%-32s: ", "Initiator sends");
     print_byte_array_ascii(message);
     byte_array * initiator_key = derive_key(get_shared_secret(initiator_params));
-    byte_array * encryption = encrypt(message, initiator_key);
+    byte_array * encryption = encrypt_aes_128_cbc_prepend_iv(message, initiator_key);
 
     // Attacker decrypts it using the derived key of "0"
     byte_array * hacked_key = derive_key("0");
-    byte_array * hacked_decryption1 = decrypt(encryption, hacked_key);
+    byte_array * hacked_decryption1 = decrypt_aes_128_cbc_prepend_iv(encryption, hacked_key);
     printf("%-32s: ", "Hacker reads initiator's message");
     print_byte_array_ascii(hacked_decryption1);
 
     // Attacker passes encryption on to responder, who
     // decrypts message then echoes it back, encrypted with its own IV.
     byte_array * responder_key = derive_key(get_shared_secret(responder_params));
-    byte_array * decryption = decrypt(encryption, responder_key);
+    byte_array * decryption = decrypt_aes_128_cbc_prepend_iv(encryption, responder_key);
     printf("%-32s: ", "Responder receives");
     print_byte_array_ascii(decryption);
 
     byte_array * message2 = cstring_to_bytes("Message in a bottle.");
     printf("%-32s: ", "Responder sends");
     print_byte_array_ascii(message2);
-    byte_array * encryption2 = encrypt(message2, responder_key);
+    byte_array * encryption2 = encrypt_aes_128_cbc_prepend_iv(message2, responder_key);
 
     printf("%-32s: ", "Hacker reads responder's message");
-    byte_array * hacked_decryption2 = decrypt(encryption2, hacked_key);
+    byte_array * hacked_decryption2 = decrypt_aes_128_cbc_prepend_iv(encryption2, hacked_key);
     print_byte_array_ascii(hacked_decryption2);
     
     // Initiator decrypts message from responder
-    byte_array * decryption2 = decrypt(encryption2, initiator_key);
+    byte_array * decryption2 = decrypt_aes_128_cbc_prepend_iv(encryption2, initiator_key);
     printf("%-32s: ", "Initiator receives");
     print_byte_array_ascii(decryption2);
     

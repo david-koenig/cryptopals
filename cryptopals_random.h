@@ -53,3 +53,9 @@ bool padding_oracle_decrypt(const byte_array * cipher, const byte_array * my_iv)
 
 // Return true if guess is the same as the secret key
 bool guess_key(const byte_array * guess);
+
+// These encryption and decryption functions are used in Diffie-Hellman problems in set 5.
+// Encrypt function generates a random IV and then prepends the IV to the message.
+// Decrypt function expects encryption in this format with prepended IV.
+byte_array * encrypt_aes_128_cbc_prepend_iv(const byte_array * plaintext, const byte_array * key);
+byte_array * decrypt_aes_128_cbc_prepend_iv(const byte_array * cipher, const byte_array * key);
