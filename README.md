@@ -30,7 +30,7 @@ Each binary can also be run with no arguments to produce a usage statement.
 ## About randomness and seeds
 
 Many (most?) of these attacks are designed to work on unknown random cryptovariables. When you write
-attacks like this it is both helpful to be able to test it against a variety of inputs *and* to hold
+attacks like this it is both helpful to be able to test them against a variety of inputs *and* to hold
 those inputs constant while you are trying to get the details of the attack correct. For that reason, I
 have generally taken the approach of feeding a seed to the RNG at the command line. This allows me to
 always keep that seed the same and generate the same set of random values until the attack works, and
