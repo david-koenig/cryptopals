@@ -5,6 +5,7 @@
 #include <openssl/conf.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <openssl/opensslv.h>
 
 void score_single_byte_xor(const byte_array * cipher, bool print_plain) {
     byte_array * key = alloc_byte_array(cipher->len);
@@ -49,32 +50,32 @@ void handle_openssl_errors() {
     abort();
 }
 
-/*
- * Starting with OpenSSL 1.1.0, there is no need to call init and cleanup functions and calling the old functions causes errors.
- * If you're using an older version of OpenSSL, uncomment the calls in the two functions below.
- * FIXME: Find a more portable way to handle this.
- */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 void init_openssl() {
     /* Load the human readable error strings for libcrypto */
-    //ERR_load_crypto_strings();
+    ERR_load_crypto_strings();
 
     /* Load all digest and cipher algorithms */
-    //OpenSSL_add_all_algorithms();
+    OpenSSL_add_all_algorithms();
 
     /* Load config file, and other important initialisation */
-    //OPENSSL_config(NULL);
+    OPENSSL_config(NULL);
 }
 
 void cleanup_openssl() {
     /* Removes all digests and ciphers */
-    //EVP_cleanup();
+    EVP_cleanup();
 
     /* if you omit the next, a small leak may be left when you make use of the BIO (low level API) for e.g. base64 transformations */
-    //CRYPTO_cleanup_all_ex_data();
+    CRYPTO_cleanup_all_ex_data();
 
     /* Remove error strings */
-    //ERR_free_strings();
+    ERR_free_strings();
 }
+#else
+void init_openssl() {}
+void cleanup_openssl() {}
+#endif
 
 // returns OpenSSL return value or 0 on error, 1 on success
 static int EVP_encrypt_decrypt(byte_array * output,
