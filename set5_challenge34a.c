@@ -13,7 +13,9 @@ int main(int argc, char ** argv) {
         fprintf(stderr, "Usage: %s seed\nNormal Diffie-Helman exchange\n", argv[0]);
         return 1;
     }
-    init_random_encrypt(atoi(argv[1]));
+    unsigned int seed = atoi(argv[1]);
+    init_random_encrypt(seed);
+    init_gmp(seed);
     
     const char * modulus =
         "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024"
@@ -58,6 +60,8 @@ int main(int argc, char ** argv) {
     free_byte_array(decryption);
     free_byte_array(reencryption);
     free_byte_array(redecryption);
+
+    cleanup_gmp();
     cleanup_random_encrypt();
     return 0;
 }

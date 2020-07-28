@@ -8,6 +8,12 @@ typedef struct dh_params {
     dh_private_params * private;
 } dh_params;
 
+// Run this before running other functions here to set up GMP's RNG state.
+void init_gmp(unsigned long int seed);
+
+// Run this when done using functions here to deallocate RNG state.
+void cleanup_gmp();
+
 // Free memory of Diffie-Hellman parameter structure
 void free_dh_params(dh_params params);
 
@@ -15,6 +21,7 @@ void free_dh_params(dh_params params);
 // Generates a random private key. Parameter object must be deallocated with free_dh_params.
 // inputs: modulus as null-terminated hex string, generator
 dh_params prehandshake(const char * p_hex_str, unsigned int g);
+dh_params prehandshake_g_hex_str(const char * p_hex_str, const char * g_hex_str);
 
 // Run by responder who has been given all of initiator's public parameters. Initializes
 // all of responder's Diffie-Helman parameters, including a random private key and shared
@@ -33,3 +40,6 @@ dh_public_params * hacked_params(const char * p_hex_str, unsigned int g);
 
 // Free memory of hacked parameters object.
 void free_hacked_params(dh_public_params * public);
+
+// For debugging.
+void print_keys(const char * prefix, const dh_params params);

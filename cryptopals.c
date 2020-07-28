@@ -76,31 +76,38 @@ void cleanup_openssl() {
     //ERR_free_strings();
 }
 
-byte_array * EVP_encrypt_decrypt(byte_array * output,
-                                 const byte_array * input,
-                                 const byte_array * key,
-                                 const byte_array * iv,
-                                 const EVP_CIPHER *type,
-                                 int (*EVP_init_ex)(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
-                                                    ENGINE *impl, const unsigned char *key, const unsigned char *iv),
-                                 int (*EVP_update)(EVP_CIPHER_CTX *ctx, unsigned char *out,
-                                                   int *outl, const unsigned char *in, int inl),
-                                 int (*EVP_final_ex)(EVP_CIPHER_CTX *ctx, unsigned char *outm,
-                                                     int *outl),
-                                 bool padding
+// returns OpenSSL return value or 0 on error, 1 on success
+static int EVP_encrypt_decrypt(byte_array * output,
+                               const byte_array * input,
+                               const byte_array * key,
+                               const byte_array * iv,
+                               const EVP_CIPHER *type,
+                               int (*EVP_init_ex)(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
+                                                  ENGINE *impl, const unsigned char *key, const unsigned char *iv),
+                               int (*EVP_update)(EVP_CIPHER_CTX *ctx, unsigned char *out,
+                                                 int *outl, const unsigned char *in, int inl),
+                               int (*EVP_final_ex)(EVP_CIPHER_CTX *ctx, unsigned char *outm,
+                                                   int *outl),
+                               bool padding
     ) {
     EVP_CIPHER_CTX *ctx;
     int len;
     int output_len;
+    int ret;
 
     /* Create and initialise the context */
-    if(!(ctx = EVP_CIPHER_CTX_new())) handle_openssl_errors();
+    if(!(ctx = EVP_CIPHER_CTX_new())) {
+        ERR_print_errors_fp(stderr);
+        return 0;
+    }
 
     /* Initialise the en/decryption operation. IMPORTANT - ensure you use a key
      * and IV size appropriate for your cipher.
      * In ECB mode, there is no IV. */
-    if(1 != EVP_init_ex(ctx, type, NULL, key->bytes, iv ? iv->bytes : NULL))
-        handle_openssl_errors();
+    if(1 != (ret = EVP_init_ex(ctx, type, NULL, key->bytes, iv ? iv->bytes : NULL))) {
+        ERR_print_errors_fp(stderr);
+        return ret;
+    }
 
     /* Needs to be done after EVP_init_ex, because that resets padding */
     if (!padding) EVP_CIPHER_CTX_set_padding(ctx, 0);
@@ -108,36 +115,44 @@ byte_array * EVP_encrypt_decrypt(byte_array * output,
     /* Provide the message to be en/decrypted, and obtain the plaintext output.
      * EVP_update can be called multiple times if necessary
      */
-    if(1 != EVP_update(ctx, output->bytes, &len, input->bytes, input->len))
-        handle_openssl_errors();
+    if(1 != (ret = EVP_update(ctx, output->bytes, &len, input->bytes, input->len))) {
+        ERR_print_errors_fp(stderr);
+        return ret;
+    }
     output_len = len;
 
     /* Finalise the en/decryption. Further plaintext bytes may be written at
      * this stage.
      */
-    if(1 != EVP_final_ex(ctx, output->bytes + len, &len)) handle_openssl_errors();
+    if(1 != (ret = EVP_final_ex(ctx, output->bytes + len, &len))) {
+	ERR_print_errors_fp(stderr);
+        return ret;
+    }
     output_len += len;
 
     /* Clean up */
     EVP_CIPHER_CTX_free(ctx);
 
     output->len = output_len;
-    return output;
+    return 1;
 }
 
 byte_array * decrypt_aes_128_ecb(const byte_array * cipher, const byte_array * key) {
     byte_array * padded_plaintext = alloc_byte_array(cipher->len);
 
-    EVP_encrypt_decrypt(padded_plaintext,
-                        cipher,
-                        key,
-                        NULL,
-                        EVP_aes_128_ecb(),
-                        EVP_DecryptInit_ex,
-                        EVP_DecryptUpdate,
-                        EVP_DecryptFinal_ex,
-                        false
-        );
+    if (1 != EVP_encrypt_decrypt(padded_plaintext,
+                                 cipher,
+                                 key,
+                                 NULL,
+                                 EVP_aes_128_ecb(),
+                                 EVP_DecryptInit_ex,
+                                 EVP_DecryptUpdate,
+                                 EVP_DecryptFinal_ex,
+                                 false)
+        ) {
+        free_byte_array(padded_plaintext);
+        return NULL;
+    }
     byte_array * plaintext = remove_pkcs7_padding(padded_plaintext);
     free_byte_array(padded_plaintext);
     return plaintext;
@@ -146,32 +161,38 @@ byte_array * decrypt_aes_128_ecb(const byte_array * cipher, const byte_array * k
 byte_array * encrypt_aes_128_ecb(const byte_array * plaintext, const byte_array * key) {
     byte_array * padded_plaintext = pkcs7_padding(plaintext, 16);
     byte_array * cipher = alloc_byte_array(padded_plaintext->len);
-    EVP_encrypt_decrypt(cipher,
-                        padded_plaintext,
-                        key,
-                        NULL,
-                        EVP_aes_128_ecb(),
-                        EVP_EncryptInit_ex,
-                        EVP_EncryptUpdate,
-                        EVP_EncryptFinal_ex,
-                        false
-        );
+    if (1 != EVP_encrypt_decrypt(cipher,
+                                 padded_plaintext,
+                                 key,
+                                 NULL,
+                                 EVP_aes_128_ecb(),
+                                 EVP_EncryptInit_ex,
+                                 EVP_EncryptUpdate,
+                                 EVP_EncryptFinal_ex,
+                                 false)
+        ) {
+        free_byte_array(cipher);
+        cipher = NULL;
+    }
     free_byte_array(padded_plaintext);
     return cipher;
 }
 
 byte_array * decrypt_aes_128_cbc(const byte_array * cipher, const byte_array * key, const byte_array * iv) {
     byte_array * ecb_decrypt = alloc_byte_array(cipher->len);
-    EVP_encrypt_decrypt(ecb_decrypt,
-                        cipher,
-                        key,
-                        NULL,
-                        EVP_aes_128_ecb(),
-                        EVP_DecryptInit_ex,
-                        EVP_DecryptUpdate,
-                        EVP_DecryptFinal_ex,
-                        false
-        );
+    if (1 != EVP_encrypt_decrypt(ecb_decrypt,
+                                 cipher,
+                                 key,
+                                 NULL,
+                                 EVP_aes_128_ecb(),
+                                 EVP_DecryptInit_ex,
+                                 EVP_DecryptUpdate,
+                                 EVP_DecryptFinal_ex,
+                                 false)
+        ) {
+        free_byte_array(ecb_decrypt);
+        return NULL;
+    }
     size_t block_size = 16;
     size_t num_blocks = cipher->len >> 4;
     size_t block_idx;
@@ -196,16 +217,20 @@ byte_array * encrypt_aes_128_cbc(const byte_array * plaintext, const byte_array 
     byte_array * output_block = alloc_byte_array(block_size);
 
     xor_block(input_block->bytes, padded_plaintext->bytes, iv->bytes, block_size);
-    EVP_encrypt_decrypt(output_block,
-                        input_block,
-                        key,
-                        NULL,
-                        EVP_aes_128_ecb(),
-                        EVP_EncryptInit_ex,
-                        EVP_EncryptUpdate,
-                        EVP_EncryptFinal_ex,
-                        false
-        );
+    if (1 != EVP_encrypt_decrypt(output_block,
+                                 input_block,
+                                 key,
+                                 NULL,
+                                 EVP_aes_128_ecb(),
+                                 EVP_EncryptInit_ex,
+                                 EVP_EncryptUpdate,
+                                 EVP_EncryptFinal_ex,
+                                 false)
+        ) {
+        free_byte_array(cipher);
+        cipher = NULL;
+        goto OUT;
+    }
     memcpy(cipher->bytes, output_block->bytes, block_size);
 
     size_t block_idx;
@@ -214,18 +239,24 @@ byte_array * encrypt_aes_128_cbc(const byte_array * plaintext, const byte_array 
                   padded_plaintext->bytes + block_size*block_idx,
                   cipher->bytes + block_size*(block_idx-1),
                   block_size);
-        EVP_encrypt_decrypt(output_block,
-                            input_block,
-                            key,
-                            NULL,
-                            EVP_aes_128_ecb(),
-                            EVP_EncryptInit_ex,
-                            EVP_EncryptUpdate,
-                            EVP_EncryptFinal_ex,
-                            false
-            );
+        if (1 != EVP_encrypt_decrypt(output_block,
+                                     input_block,
+                                     key,
+                                     NULL,
+                                     EVP_aes_128_ecb(),
+                                     EVP_EncryptInit_ex,
+                                     EVP_EncryptUpdate,
+                                     EVP_EncryptFinal_ex,
+                                     false)
+            ) {
+            free_byte_array(cipher);
+            cipher = NULL;
+            goto OUT;
+        }
         memcpy(cipher->bytes + block_size*block_idx, output_block->bytes, block_size);
     }
+
+OUT:
     free_byte_array(padded_plaintext);
     free_byte_array(input_block);
     free_byte_array(output_block);

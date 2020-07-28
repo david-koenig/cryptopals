@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <assert.h>
 
 #include "cryptopals_dh.h"
 #include "cryptopals_derived_key.h"
@@ -13,7 +11,9 @@ int main(int argc, char ** argv) {
         fprintf(stderr, "Usage: %s seed\nMITM key-fixing attack on Diffie-Helman exchange\n", argv[0]);
         return 1;
     }
-    init_random_encrypt(atoi(argv[1]));
+    unsigned int seed =	atoi(argv[1]);
+    init_random_encrypt(seed);
+    init_gmp(seed);
     
     const char * modulus =
         "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024"
@@ -90,6 +90,8 @@ int main(int argc, char ** argv) {
     free_byte_array(encryption2);
     free_byte_array(hacked_decryption2);
     free_byte_array(decryption2);
+
+    cleanup_gmp();
     cleanup_random_encrypt();
     return 0;
 }

@@ -4,6 +4,17 @@
 
 #define MAX_SHARED_SECRET_LEN 500
 
+static gmp_randstate_t state;
+
+void init_gmp(unsigned long int seed) {
+    gmp_randinit_default(state);
+    gmp_randseed_ui(state, seed);
+}
+
+void cleanup_gmp() {
+    gmp_randclear(state);
+}
+
 // struct sent by initiator of Diffie-Hellman connection
 typedef struct dh_public_params {
     mpz_t p; // modulus
@@ -16,6 +27,11 @@ typedef struct dh_private_params {
     char shared_secret[MAX_SHARED_SECRET_LEN+1];
     int	shared_secret_len;
 } dh_private_params;
+
+void print_keys(const char * prefix, const dh_params params) {
+    gmp_printf("%s public key : %Zx\n", prefix, params.public->key);
+    gmp_printf("%s private key: %Zx\n", prefix, params.private->key);
+}
 
 char * get_shared_secret(const dh_params params) {
     return params.private->shared_secret;
@@ -36,17 +52,12 @@ void free_dh_params(dh_params params) {
 
 // Helper function used by both initiator and responder. Allocates memory for private and public keys.
 // Calculates a random private key and derives public key from it. Modulus and generator must already be set.
-static void calculate_private_and_public_keys(dh_params params) {
-    gmp_randstate_t state;
-    gmp_randinit_default(state);
-    
+static inline void calculate_private_and_public_keys(dh_params params) {
     mpz_init(params.private->key);
     mpz_urandomm(params.private->key, state, params.public->p);
 
     mpz_init(params.public->key);
     mpz_powm(params.public->key, params.public->g, params.private->key, params.public->p);
-
-    gmp_randclear(state);
 }
 
 dh_params prehandshake(const char * p_hex_str, unsigned int g) {
@@ -57,6 +68,19 @@ dh_params prehandshake(const char * p_hex_str, unsigned int g) {
     mpz_init_set_ui(params.public->g, g);
 
     calculate_private_and_public_keys(params);
+
+    return params;
+}
+
+dh_params prehandshake_g_hex_str(const char * p_hex_str, const char * g_hex_str) {
+    dh_params params;
+    params.public = malloc(sizeof(dh_public_params));
+    params.private = malloc(sizeof(dh_private_params));
+    mpz_init_set_str(params.public->p, p_hex_str, 16);
+    mpz_init_set_str(params.public->g, g_hex_str, 16);
+
+    calculate_private_and_public_keys(params);
+
     return params;
 }
 
