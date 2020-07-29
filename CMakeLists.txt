@@ -20,6 +20,7 @@ add_library(Cryptopals
   ${cryptopals_clib}
   md4c.c
   sha1.c
+  sha256.c
   )
 target_link_libraries(Cryptopals ${OPENSSL_CRYPTO_LIBRARY} ${Gmp})
 target_include_directories(Cryptopals PRIVATE ${OPENSSL_INCLUDE_DIR} ${Gmp_path})
@@ -31,6 +32,7 @@ link_libraries(Cryptopals)
 
 add_executable(aes_128_ecb_test aes_128_ecb_test.c)
 add_executable(sha1test sha1test.c)
+add_executable(sha256test sha256_test.c)
 add_executable(md4test mddriver.c)
 
 file(GLOB C_challenges "set*.c")
