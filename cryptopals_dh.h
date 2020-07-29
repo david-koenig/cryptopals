@@ -1,4 +1,8 @@
 #pragma once
+#include "cryptopals_gmp.h"
+
+// User must run init_gmp(seed) before using the functions below, and must run
+// cleanup_gmp() afterward.
 
 typedef struct dh_public_params dh_public_params;
 typedef struct dh_private_params dh_private_params;
@@ -7,12 +11,6 @@ typedef struct dh_params {
     dh_public_params * public;
     dh_private_params * private;
 } dh_params;
-
-// Run this before running other functions here to set up GMP's RNG state.
-void init_gmp(unsigned long int seed);
-
-// Run this when done using functions here to deallocate RNG state.
-void cleanup_gmp();
 
 // Free memory of Diffie-Hellman parameter structure
 void free_dh_params(dh_params params);

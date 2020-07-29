@@ -1,19 +1,10 @@
-#include <stdlib.h>
-#include <gmp.h>
 #include "cryptopals_dh.h"
+#include "cryptopals_gmp_private.h"
+
+#include <stdlib.h>
+
 
 #define MAX_SHARED_SECRET_LEN 500
-
-static gmp_randstate_t state;
-
-void init_gmp(unsigned long int seed) {
-    gmp_randinit_default(state);
-    gmp_randseed_ui(state, seed);
-}
-
-void cleanup_gmp() {
-    gmp_randclear(state);
-}
 
 // struct sent by initiator of Diffie-Hellman connection
 typedef struct dh_public_params {
@@ -54,7 +45,7 @@ void free_dh_params(dh_params params) {
 // Calculates a random private key and derives public key from it. Modulus and generator must already be set.
 static inline void calculate_private_and_public_keys(dh_params params) {
     mpz_init(params.private->key);
-    mpz_urandomm(params.private->key, state, params.public->p);
+    mpz_urandomm(params.private->key, cryptopals_gmp_randstate, params.public->p);
 
     mpz_init(params.public->key);
     mpz_powm(params.public->key, params.public->g, params.private->key, params.public->p);

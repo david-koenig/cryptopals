@@ -11,11 +11,14 @@ typedef struct byte_array {
 // Allocate memory for a byte array. Be sure to run free_byte_array when finished
 byte_array * alloc_byte_array(size_t len);
 
-// Free memory for a byte array.
+// Free memory for a byte array
 void free_byte_array(byte_array * x);
 
 // Print byte array in hex format
 void print_byte_array(const byte_array * x);
+
+// Creates a new byte array with the ASCII hex representation of the bytes of original array
+byte_array * print_byte_array_hex_to_new_byte_array(const byte_array * x);
 
 // Print byte array in ASCII format
 void print_byte_array_ascii(const byte_array * x);

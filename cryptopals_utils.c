@@ -25,6 +25,15 @@ void print_byte_array(const byte_array * x) {
     printf("\n");
 }
 
+byte_array * print_byte_array_hex_to_new_byte_array(const byte_array * x) {
+    byte_array * out = alloc_byte_array(1 + x->len * 2);
+    size_t idx;
+    for (idx = 0 ; idx < x->len ; idx++) {
+        sprintf((char *) out->bytes + 2*idx, "%02hhx", x->bytes[idx]);
+    }
+    return out;
+}
+
 void print_byte_array_blocks(const byte_array * x, size_t block_size, char separator) {
     size_t idx;
     for (idx = 0 ; idx < x->len ; idx++) {
