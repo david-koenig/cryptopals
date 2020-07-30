@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(DKCryptopals)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 include(FindOpenSSL)
 find_library(Gmp gmp REQUIRED)
 find_path(Gmp_path gmp.h)

@@ -26,11 +26,17 @@ int main(int argc, char ** argv) {
         "fffffffffffff";
     
     byte_array * salt = random_128_bits();
-    srp_params * params = init_srp(modulus, 2, 3, email, password, salt);
+    srp_params * params = init_srp(modulus, 2, 3);
     
-    calculate_server_v(params);
+    register_user_server(params, email, password, salt);
     calculate_client_keys(params);
     calculate_server_keys(params);
+    calculate_u(params);
+
+    calculate_client_shared_secret(params, password, salt);
+    calculate_server_shared_secret(params);
+
+    compare_shared_secrets(params);
     
     free_srp_params(params);
     free_byte_array(salt);
