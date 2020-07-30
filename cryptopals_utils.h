@@ -17,8 +17,9 @@ void free_byte_array(byte_array * x);
 // Print byte array in hex format
 void print_byte_array(const byte_array * x);
 
-// Creates a new byte array with the ASCII hex representation of the bytes of original array
-byte_array * print_byte_array_hex_to_new_byte_array(const byte_array * x);
+// Creates a new byte array with the ASCII hex representation of the bytes of original array.
+// New byte array will be null-terminated to allow tools reading C-strings to use it.
+byte_array * byte_array_to_hex_byte_array(const byte_array * x);
 
 // Print byte array in ASCII format
 void print_byte_array_ascii(const byte_array * x);

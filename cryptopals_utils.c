@@ -25,7 +25,7 @@ void print_byte_array(const byte_array * x) {
     printf("\n");
 }
 
-byte_array * print_byte_array_hex_to_new_byte_array(const byte_array * x) {
+byte_array * byte_array_to_hex_byte_array(const byte_array * x) {
     byte_array * out = alloc_byte_array(1 + x->len * 2);
     size_t idx;
     for (idx = 0 ; idx < x->len ; idx++) {

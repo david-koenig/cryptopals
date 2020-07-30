@@ -27,18 +27,20 @@ int main(int argc, char ** argv) {
     
     byte_array * salt = random_128_bits();
     srp_params * params = init_srp(modulus, 2, 3);
-    
     register_user_server(params, email, password, salt);
-    calculate_client_keys(params);
-    calculate_server_keys(params);
-    calculate_u(params);
 
-    calculate_client_shared_secret(params, password, salt);
-    calculate_server_shared_secret(params);
+    srp_session * session = init_srp_session();
+    calculate_client_keys(params, session);
+    calculate_server_keys(params, session);
+    calculate_u(session);
 
-    compare_shared_secrets(params);
+    calculate_client_shared_secret(params, session, password, salt);
+    calculate_server_shared_secret(params, session);
+
+    compare_shared_secrets(session);
     
     free_srp_params(params);
+    free_srp_session(session);
     free_byte_array(salt);
     cleanup_gmp();
     cleanup_random_encrypt();
