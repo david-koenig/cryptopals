@@ -7,26 +7,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-typedef struct srp_server_session_private {
-    mpz_t b; // private key
-    mpz_t S; // shared secret
-    byte_array * K; // SHA256(S)
-} srp_server_session_private;
-
-typedef	struct srp_client_session_private {
-    mpz_t a; // private key
-    mpz_t S; // shared secret
-    byte_array * K; // SHA256(S)
-} srp_client_session_private;
-
-typedef struct srp_session {
-    mpz_t A; // client's public key
-    mpz_t B; // server's public key
-    mpz_t u; // SHA256(A|B)
-    srp_server_session_private server;
-    srp_client_session_private client;
-} srp_session;
-
 // In real life, this would be a hash table indexed by emails (or other usernames)
 // storing (salt, v) pairs.
 typedef struct srp_server_private_storage {
@@ -53,8 +33,8 @@ void free_srp_params(srp_params * params) {
 }
 
 srp_params * init_srp(const char * N_hex,
-                                unsigned int g,
-                                unsigned int k) {
+                      unsigned int g,
+                      unsigned int k) {
     srp_params * params = malloc(sizeof(srp_params));
     mpz_init_set_str(params->N, N_hex, 16);
     mpz_init_set_ui(params->g, g);
@@ -67,32 +47,67 @@ srp_params * init_srp(const char * N_hex,
     return params;
 }
 
-srp_session * init_srp_session() {
-    srp_session * session = malloc(sizeof(srp_session));
-    session->server.K = NULL;
-    session->client.K = NULL;
-    mpz_init(session->server.b);
-    mpz_init(session->client.a);
-    mpz_init(session->A);
-    mpz_init(session->B);
-    mpz_init(session->u);
-    mpz_init(session->server.S);
-    mpz_init(session->client.S);
-    return session;
+
+typedef struct srp_client_session {
+    mpz_t A; // client's public key
+    mpz_t B; // server's public key
+    mpz_t a; // client's private key
+    mpz_t S; // shared secret
+} srp_client_session;
+
+typedef struct srp_client_handshake {
+    mpz_t A; // client's public key
+    byte_array * email;
+} srp_client_handshake;
+
+typedef struct srp_server_session {
+    mpz_t A; // client's public key
+    mpz_t B; // server's public key
+    mpz_t b; // server's private key
+    mpz_t S; // shared secret
+} srp_server_session;
+
+typedef struct srp_server_handshake {
+    mpz_t B; // server's public key
+    byte_array * salt;
+} srp_server_handshake;
+
+srp_client_handshake * init_srp_client_session(srp_client_session ** client,
+                                               srp_params * params,
+                                               const char * email) {
+
+    srp_client_session * my_client = malloc(sizeof(srp_client_session));
+    mpz_init(my_client->a);
+    mpz_init(my_client->A);
+    mpz_init(my_client->B);
+    mpz_init(my_client->S);
+
+    // Generate client's random ephemeral private key. (Just for this login.)
+    mpz_urandomm(my_client->a, cryptopals_gmp_randstate, params->N);
+
+    // Give public key to server. A = (g ** a) mod N
+    mpz_powm(my_client->A, params->g, my_client->a, params->N);
+
+    srp_client_handshake * handshake = malloc(sizeof(srp_client_handshake));
+    handshake->email = cstring_to_bytes(email);
+    mpz_init_set(handshake->A, my_client->A);
+
+    *client = my_client;
+    return handshake;
 }
 
+void free_srp_client_session(srp_client_session * client) {
+    mpz_clear(client->a);
+    mpz_clear(client->A);
+    mpz_clear(client->B);
+    mpz_clear(client->S);
+    free(client);
+}
 
-void free_srp_session(srp_session * session) {
-    free_byte_array(session->server.K);
-    free_byte_array(session->client.K);
-    mpz_clear(session->server.b);
-    mpz_clear(session->client.a);
-    mpz_clear(session->A);
-    mpz_clear(session->B);
-    mpz_clear(session->u);
-    mpz_clear(session->server.S);
-    mpz_clear(session->client.S);
-    free(session);
+void free_srp_client_handshake(srp_client_handshake * handshake) {
+    free_byte_array(handshake->email);
+    mpz_clear(handshake->A);
+    free(handshake);
 }
 
 // Initializes mpz_t in first argument. Be sure to call mpz_clear on it later.
@@ -184,93 +199,126 @@ void register_user_server(srp_params * params,
     free_byte_array(sha_out);
 }
 
-void calculate_client_keys(srp_params * params, srp_session * session) {
-    mpz_urandomm(session->client.a, cryptopals_gmp_randstate, params->N);
+srp_server_handshake * receive_client_handshake(srp_server_session ** server,
+                                                srp_params * params,
+                                                srp_client_handshake * handshake) {
+    if (!byte_arrays_equal(handshake->email, params->server.email)) {
+        fprintf(stderr, "%s: Username not found\n", __func__);
+        return NULL;
+    }
+    srp_server_session * my_server = malloc(sizeof(srp_server_session));
+    mpz_init_set(my_server->A, handshake->A);
+    mpz_init(my_server->B);
+    mpz_init(my_server->b);
+    mpz_init(my_server->S);
 
-    // A = (g ** a) mod N
-    mpz_powm(session->A, params->g, session->client.a, params->N);
-}
-
-void calculate_server_keys(srp_params * params, srp_session * session) {
-    mpz_urandomm(session->server.b, cryptopals_gmp_randstate, params->N);
+    mpz_urandomm(my_server->b, cryptopals_gmp_randstate, params->N);
 
     // B = (kv + g ** b) mod N
-    mpz_mul(session->B, params->k, params->server.v);
+    mpz_mul(my_server->B, params->k, params->server.v);
     mpz_t g_to_the_b;
     mpz_init(g_to_the_b);
-    mpz_powm(g_to_the_b, params->g, session->server.b, params->N);
-    mpz_add(session->B, session->B, g_to_the_b);
-    mpz_mod(session->B, session->B, params->N);
+    mpz_powm(g_to_the_b, params->g, my_server->b, params->N);
+    mpz_add(my_server->B, my_server->B, g_to_the_b);
+    mpz_mod(my_server->B, my_server->B, params->N);
     mpz_clear(g_to_the_b);
+
+    srp_server_handshake * my_handshake = malloc(sizeof(srp_server_handshake));
+    mpz_init_set(my_handshake->B, my_server->B);
+    my_handshake->salt = copy_byte_array(params->server.salt);
+
+    *server = my_server;
+    return my_handshake;
 }
 
-void calculate_u(srp_session * session) {
-    // u = SHA256(A|B). Both server and client calculate this individually,
-    // based on both public keys. Since it's only based on public information
-    // it is trivial that they will arrive at same value. Since I'm not implementing
-    // the networking aspect of this, but only the cryptography, I'm only bothering
-    // to calculate it once.
-    byte_array * A_bytes = mpz_to_byte_array(session->A);
-    byte_array * B_bytes = mpz_to_byte_array(session->B);
+void free_srp_server_session(srp_server_session * server) {
+    mpz_clear(server->A);
+    mpz_clear(server->B);
+    mpz_clear(server->b);
+    mpz_clear(server->S);
+    free(server);
+}
+
+void free_srp_server_handshake(srp_server_handshake * handshake) {
+    mpz_clear(handshake->B);
+    free_byte_array(handshake->salt);
+    free(handshake);
+}
+
+// u = SHA256(A|B)
+static void calculate_u_init(mpz_t u, mpz_t A, mpz_t B) {
+    mpz_init(u);
+    byte_array * A_bytes = mpz_to_byte_array(A);
+    byte_array * B_bytes = mpz_to_byte_array(B);
     byte_array * u_bytes = sha256_appended_byte_arrays(A_bytes, B_bytes);
-    byte_array_to_mpz(session->u, u_bytes);
+    byte_array_to_mpz(u, u_bytes);
     free_byte_array(A_bytes);
     free_byte_array(B_bytes);
     free_byte_array(u_bytes);
 }
 
-void calculate_client_shared_secret(srp_params * params,
-                                    srp_session * session,
-                                    const char * password,
-                                    const byte_array * salt) {
+void calculate_client_shared_secret(srp_client_session * client,
+                                    srp_params * params,
+                                    srp_server_handshake * handshake,
+                                    const char * password) {
+    mpz_set(client->B, handshake->B);
+
     // x = SHA256(salt|password), same as server calculated and threw out
     const byte_array password_ba = {(uint8_t *)password, strlen(password)};
-    byte_array * sha_out = sha256_appended_byte_arrays(salt, &password_ba);
+    byte_array * sha_out = sha256_appended_byte_arrays(handshake->salt, &password_ba);
     mpz_t x;
     byte_array_to_mpz_init(x, sha_out);
 
+    mpz_t u;
+    calculate_u_init(u, client->A, client->B);
+    
     // exponent = (a + u * x)
     mpz_t exponent;
-    mpz_init_set(exponent, session->client.a);
-    mpz_addmul(exponent, session->u, x);
+    mpz_init_set(exponent, client->a);
+    mpz_addmul(exponent, u, x);
 
     // base = (B - k * g**x)
     mpz_t temp;
     mpz_init(temp);
     mpz_powm(temp, params->g, x, params->N);
     mpz_t base;
-    mpz_init_set(base, session->B);
+    mpz_init_set(base, client->B);
     mpz_submul(base, params->k, temp);
 
     // S = (B - k * g**x) ** (B - k * g**x) mod N
-    mpz_powm(session->client.S, base, exponent, params->N);
+    mpz_powm(client->S, base, exponent, params->N);
 
     mpz_clear(x);
+    mpz_clear(u);
     mpz_clear(exponent);
     mpz_clear(temp);
     mpz_clear(base);
     free_byte_array(sha_out);
 }
 
-void calculate_server_shared_secret(srp_params * params,
-                                    srp_session * session) {
+void calculate_server_shared_secret(srp_server_session * server,
+                                    srp_params * params) {
+    mpz_t u;
+    calculate_u_init(u, server->A, server->B);
+
     // base = (A * v**u)
     mpz_t base;
     mpz_init(base);
-    mpz_powm(base, params->server.v, session->u, params->N);
-    mpz_mul(base, base, session->A);
+    mpz_powm(base, params->server.v, u, params->N);
+    mpz_mul(base, base, server->A);
 
     // S = (A * v**u) ** b mod N
-    mpz_powm(session->server.S, base, session->server.b, params->N);
+    mpz_powm(server->S, base, server->b, params->N);
 
+    mpz_clear(u);
     mpz_clear(base);
 }
 
 // This is cheating, but just for debugging purposes along the way.
-void compare_shared_secrets(srp_session * session) {
-    //gmp_printf("server secret = %Zx\n", session->server.S);
-    //gmp_printf("client secret = %Zx\n", session->client.S);
-    if (mpz_cmp(session->server.S, session->client.S)) {
+void compare_shared_secrets(srp_client_session * client, srp_server_session * server) {
+    //gmp_printf("client secret = %Zx\n", client->S);
+    //gmp_printf("server secret = %Zx\n", server->S);
+    if (mpz_cmp(client->S, server->S)) {
         printf("Secrets differ! :-(\n");
     } else {
         printf("Secrets match! :-)\n");

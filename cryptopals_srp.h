@@ -5,37 +5,40 @@
 // User must run init_gmp(seed) before using the functions below, and must run
 // cleanup_gmp() afterward.
 
-typedef struct srp_session srp_session;
-void free_srp_session(srp_session * params);
-
 typedef struct srp_params srp_params;
+typedef struct srp_client_session srp_client_session;
+typedef struct srp_client_handshake srp_client_handshake;
+typedef struct srp_server_session srp_server_session;
+typedef struct srp_server_handshake srp_server_handshake;
+
 void free_srp_params(srp_params * params);
+void free_srp_client_session(srp_client_session * client);
+void free_srp_client_handshake(srp_client_handshake * handshake);
+void free_srp_server_session(srp_server_session * server);
+void free_srp_server_handshake(srp_server_handshake * handshake);
 
-srp_params * init_srp(const char * N,
-                                unsigned int g,
-                                unsigned int k);
-
-srp_session * init_srp_session();
+srp_params * init_srp(const char * N, unsigned int g, unsigned int k);
 
 void register_user_server(srp_params * params,
                           const char * email,
                           const char * password,
                           const byte_array * salt);
 
-void calculate_client_keys(srp_params * params,
-                           srp_session * session);
+srp_client_handshake * init_srp_client_session(srp_client_session ** client,
+                                               srp_params * params,
+                                               const char * email);
 
-void calculate_server_keys(srp_params * params,
-                           srp_session * session);
+srp_server_handshake * receive_client_handshake(srp_server_session ** server,
+                                                srp_params * params,
+                                                srp_client_handshake * handshake);
 
-void calculate_u(srp_session * session);
+void calculate_client_shared_secret(srp_client_session * client,
+                                    srp_params * params,
+                                    srp_server_handshake * handshake,
+                                    const char * password);
 
-void calculate_client_shared_secret(srp_params * params,
-                                    srp_session * session,
-                                    const char * password,
-                                    const byte_array * salt);
+void calculate_server_shared_secret(srp_server_session * server,
+                                    srp_params * params);
 
-void calculate_server_shared_secret(srp_params * params,
-                                    srp_session * session);
-
-void compare_shared_secrets(srp_session * session);
+void compare_shared_secrets(srp_client_session * client,
+                            srp_server_session * server);

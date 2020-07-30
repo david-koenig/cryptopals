@@ -29,18 +29,26 @@ int main(int argc, char ** argv) {
     srp_params * params = init_srp(modulus, 2, 3);
     register_user_server(params, email, password, salt);
 
-    srp_session * session = init_srp_session();
-    calculate_client_keys(params, session);
-    calculate_server_keys(params, session);
-    calculate_u(session);
+    srp_client_session * client;
+    srp_client_handshake * client_handshake = init_srp_client_session(&client,
+                                                                      params,
+                                                                      email);
+    srp_server_session * server;
+    srp_server_handshake * server_handshake = receive_client_handshake(&server,
+                                                                       params,
+                                                                       client_handshake);
 
-    calculate_client_shared_secret(params, session, password, salt);
-    calculate_server_shared_secret(params, session);
+    calculate_client_shared_secret(client, params, server_handshake, password);
+    calculate_server_shared_secret(server, params);
 
-    compare_shared_secrets(session);
+    compare_shared_secrets(client, server);
     
     free_srp_params(params);
-    free_srp_session(session);
+    free_srp_client_session(client);
+    free_srp_client_handshake(client_handshake);
+    free_srp_server_session(server);
+    free_srp_server_handshake(server_handshake);
+
     free_byte_array(salt);
     cleanup_gmp();
     cleanup_random_encrypt();
