@@ -62,7 +62,7 @@ byte_array * append_three_byte_arrays(const byte_array * x, const byte_array * y
 bool byte_arrays_equal(const byte_array * x, const byte_array * y);
 
 // Calculates XOR of byte array X and byte array Y and stores it in byte array Z,
-// or do "byte_array * z = xor(NULL, x, y);" to allocate a new byte array and place XOR there. 
+// or do "byte_array * z = xor_byte_arrays(NULL, x, y);" to allocate a new byte array.
 // If x and y have different lengths, z will have the minimum of the two lengths.
 byte_array * xor_byte_arrays(byte_array * z, const byte_array * x, const byte_array * y);
 

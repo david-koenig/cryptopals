@@ -114,7 +114,7 @@ static byte_array * sha256_appended_byte_arrays(const byte_array * a, const byte
     sha256_init(&ctx);
     sha256_update(&ctx, a->bytes, a->len);
     sha256_update(&ctx, b->bytes, b->len);
-    byte_array * sha_out = alloc_byte_array(SHA256_BLOCK_SIZE);
+    byte_array * sha_out = alloc_byte_array(SHA256_OUTPUT_SIZE);
     sha256_final(&ctx, sha_out->bytes);
     return sha_out;
 }

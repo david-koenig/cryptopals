@@ -3,6 +3,7 @@
 
 #include "cryptopals_random.h"
 #include "cryptopals_srp.h"
+#include "cryptopals_hmac.h"
 
 int main(int argc, char ** argv) {
     if (argc < 4) {
@@ -42,6 +43,8 @@ int main(int argc, char ** argv) {
     calculate_server_shared_secret(server, params);
 
     compare_shared_secrets(client, server);
+
+    test_sha256_hmac();
     
     free_srp_params(params);
     free_srp_client_session(client);
