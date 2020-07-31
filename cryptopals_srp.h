@@ -40,5 +40,6 @@ void calculate_client_shared_secret(srp_client_session * client,
 void calculate_server_shared_secret(srp_server_session * server,
                                     srp_params * params);
 
-void compare_shared_secrets(srp_client_session * client,
-                            srp_server_session * server);
+byte_array * hmac_client_secret(srp_client_session * client, byte_array * salt);
+
+bool validate_client_hmac(srp_server_session * server, srp_params * params, const byte_array * client_hmac);

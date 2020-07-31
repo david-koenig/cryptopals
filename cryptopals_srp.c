@@ -1,6 +1,7 @@
 #include "cryptopals_srp.h"
 #include "cryptopals_gmp_private.h"
 #include "cryptopals_sha256.h"
+#include "cryptopals_hmac.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -250,13 +251,23 @@ void calculate_server_shared_secret(srp_server_session * server,
     mpz_clear(base);
 }
 
-// This is cheating, but just for debugging purposes along the way.
-void compare_shared_secrets(srp_client_session * client, srp_server_session * server) {
-    //gmp_printf("client secret = %Zx\n", client->S);
-    //gmp_printf("server secret = %Zx\n", server->S);
-    if (mpz_cmp(client->S, server->S)) {
-        printf("Secrets differ! :-(\n");
-    } else {
-        printf("Secrets match! :-)\n");
-    }
+// HMAC-SHA256(SHA256(S), salt)
+static byte_array * hmac_secret(const mpz_t secret, const byte_array * salt) {
+    byte_array * secret_ba = mpz_to_byte_array(secret);
+    byte_array * K = sha256_byte_array(secret_ba);
+    byte_array * hmac = hmac_sha256(K, salt);
+    free_byte_array(secret_ba);
+    free_byte_array(K);
+    return hmac;
+}
+
+byte_array * hmac_client_secret(srp_client_session * client, byte_array * salt) {
+    return hmac_secret(client->S, salt);
+}
+
+bool validate_client_hmac(srp_server_session * server, srp_params * params, const byte_array * client_hmac) {
+    byte_array * server_hmac = hmac_secret(server->S, params->server.salt);
+    bool ret = byte_arrays_equal(client_hmac, server_hmac);
+    free_byte_array(server_hmac);
+    return ret;
 }

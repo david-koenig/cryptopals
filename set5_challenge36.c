@@ -39,9 +39,19 @@ int main(int argc, char ** argv) {
                                                                        client_handshake);
 
     calculate_client_shared_secret(client, params, server_handshake, password);
-    calculate_server_shared_secret(server, params);
+    byte_array * hmac = hmac_client_secret(client, salt);
 
-    compare_shared_secrets(client, server);
+    calculate_server_shared_secret(server, params);
+    bool pass = validate_client_hmac(server, params, hmac);
+
+    int ret;
+    if (pass) {
+        printf("Success. Server validates client's password securely.\n");
+        ret = 0;
+    } else {
+        printf("Failure. Wrong username or password.\n");
+        ret = 1;
+    }
 
     free_srp_params(params);
     free_srp_client_session(client);
@@ -49,7 +59,9 @@ int main(int argc, char ** argv) {
     free_srp_server_session(server);
     free_srp_server_handshake(server_handshake);
 
+    free_byte_array(hmac);
     free_byte_array(salt);
     cleanup_gmp();
     cleanup_random_encrypt();
+    return ret;
 }

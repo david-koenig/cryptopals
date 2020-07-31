@@ -38,7 +38,7 @@ static const byte_array sha256_opad = {opad_bytes, SHA256_BLOCK_SIZE};
 static const byte_array sha256_ipad = {ipad_bytes, SHA256_BLOCK_SIZE};
 
 // HMAC(K,m) = H( (K' ^ opad) | H((K' ^ ipad) | m) )
-byte_array * sha256_hmac(const byte_array * key, const byte_array * message) {
+byte_array * hmac_sha256(const byte_array * key, const byte_array * message) {
     byte_array * k_prime = NULL;
     const byte_array * my_key;
     if (key->len == SHA256_BLOCK_SIZE) {
@@ -67,7 +67,7 @@ byte_array * sha256_hmac(const byte_array * key, const byte_array * message) {
     return outer_hash_out;
 }
 
-void test_sha256_hmac() {
+void test_hmac_sha256() {
     byte_array * key1 = cstring_to_bytes("key");
     byte_array * message1 = cstring_to_bytes("The quick brown fox jumps over the lazy dog");
     byte_array * hmac_answer1 = hex_to_bytes("f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8");
@@ -85,9 +85,9 @@ void test_sha256_hmac() {
                                              "d by the HMAC algorithm.");
     byte_array *hmac_answer3 = hex_to_bytes("9b09ffa71b942fcb27635fbcd5b0e944bfdc63644f0713938a7f51535c3a35e2");
 
-    byte_array * hmac1 = sha256_hmac(key1, message1);
-    byte_array * hmac2 = sha256_hmac(key2, message2);
-    byte_array * hmac3 = sha256_hmac(key3, message3);
+    byte_array * hmac1 = hmac_sha256(key1, message1);
+    byte_array * hmac2 = hmac_sha256(key2, message2);
+    byte_array * hmac3 = hmac_sha256(key3, message3);
 
     assert(byte_arrays_equal(hmac1, hmac_answer1));
     assert(byte_arrays_equal(hmac2, hmac_answer2));
