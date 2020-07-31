@@ -10,9 +10,9 @@
 // functions for interacting with GMP but does not give user code consuming the library
 // access to the GMP internals at all.
 
-// Run this before running other functions here to set up GMP's RNG state.
+// Set up GMP's RNG state.
 void init_gmp(unsigned long int seed);
 
-// Run this when done using functions here to deallocate RNG state.
+// Deallocate GMP's RNG state.
 void cleanup_gmp();
 
