@@ -37,11 +37,12 @@ static uint8_t ipad_bytes[] =
 static const byte_array sha256_opad = {opad_bytes, SHA256_BLOCK_SIZE};
 static const byte_array sha256_ipad = {ipad_bytes, SHA256_BLOCK_SIZE};
 
-static byte_array * sha256_byte_array(const byte_array * in) {
+// Last argument allows for zero padded output larger than SHA256_OUTPUT_SIZE.
+static byte_array * sha256_byte_array(const byte_array * in, size_t out_size) {
     SHA256_CTX ctx;
     sha256_init(&ctx);
     sha256_update(&ctx, in->bytes, in->len);
-    byte_array * out = alloc_byte_array(SHA256_OUTPUT_SIZE);
+    byte_array * out = alloc_byte_array(out_size);
     sha256_final(&ctx, out->bytes);
     return out;
 }
@@ -69,11 +70,8 @@ byte_array * sha256_hmac(const byte_array * key, const byte_array * message) {
         memcpy(k_prime->bytes, key->bytes, key->len);
         my_key = k_prime;
     } else {
-        byte_array * hash_of_key = sha256_byte_array(key);
-        k_prime = alloc_byte_array(SHA256_BLOCK_SIZE);
-        memcpy(k_prime->bytes, hash_of_key->bytes, hash_of_key->len);
+        k_prime = sha256_byte_array(key, SHA256_BLOCK_SIZE);
         my_key = k_prime;
-        free_byte_array(hash_of_key);
     }
 
     byte_array * k_xor_ipad = xor_byte_arrays(NULL, my_key, &sha256_ipad);
@@ -96,9 +94,9 @@ void test_sha256_hmac() {
     byte_array * abc = cstring_to_bytes("abc");
     byte_array * long_string = cstring_to_bytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
 
-    byte_array * sha256_test1 = sha256_byte_array(empty);
-    byte_array * sha256_test2 = sha256_byte_array(abc);
-    byte_array * sha256_test3 = sha256_byte_array(long_string);
+    byte_array * sha256_test1 = sha256_byte_array(empty, SHA256_OUTPUT_SIZE);
+    byte_array * sha256_test2 = sha256_byte_array(abc, SHA256_OUTPUT_SIZE);
+    byte_array * sha256_test3 = sha256_byte_array(long_string, SHA256_OUTPUT_SIZE);
 
     byte_array * sha256_test1_answer = hex_to_bytes("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     byte_array * sha256_test2_answer = hex_to_bytes("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
@@ -127,10 +125,22 @@ void test_sha256_hmac() {
     byte_array * message2 = cstring_to_bytes("what do ya want for nothing?");
     byte_array * hmac_answer2 = hex_to_bytes("5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843");
 
+    byte_array * key3 = alloc_byte_array(131);
+    for (int i = 0; i < 131; ++i) {
+        key3->bytes[i] = 0xaa;
+    }
+    byte_array * message3 = cstring_to_bytes("This is a test using a larger than block-size key and a larger t"
+                                             "han block-size data. The key needs to be hashed before being use"
+                                             "d by the HMAC algorithm.");
+    byte_array *hmac_answer3 = hex_to_bytes("9b09ffa71b942fcb27635fbcd5b0e944bfdc63644f0713938a7f51535c3a35e2");
+
     byte_array * hmac1 = sha256_hmac(key1, message1);
     byte_array * hmac2 = sha256_hmac(key2, message2);
+    byte_array * hmac3 = sha256_hmac(key3, message3);
+
     assert(byte_arrays_equal(hmac1, hmac_answer1));
     assert(byte_arrays_equal(hmac2, hmac_answer2));
+    assert(byte_arrays_equal(hmac3, hmac_answer3));
     printf("SHA256-HMAC tests pass!\n");
 
     free_byte_array(key1);
@@ -141,4 +151,8 @@ void test_sha256_hmac() {
     free_byte_array(message2);
     free_byte_array(hmac_answer2);
     free_byte_array(hmac2);
+    free_byte_array(key3);
+    free_byte_array(message3);
+    free_byte_array(hmac_answer3);
+    free_byte_array(hmac3);
 }
