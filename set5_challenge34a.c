@@ -34,11 +34,11 @@ int main(int argc, char ** argv) {
 
     // initiator sends a message to responder
     byte_array * message = cstring_to_bytes("Sending out an SOS. Message in a bottle.");
-    byte_array * initiator_key = derive_key(get_shared_secret(initiator_params));
+    byte_array * initiator_key = derive_key(get_shared_secret_bytes(initiator_params));
     byte_array * encryption = encrypt_aes_128_cbc_prepend_iv(message, initiator_key);
 
     // responder decrypts message then echoes it back, encrypted with its own IV
-    byte_array * responder_key = derive_key(get_shared_secret(responder_params));
+    byte_array * responder_key = derive_key(get_shared_secret_bytes(responder_params));
     byte_array * decryption = decrypt_aes_128_cbc_prepend_iv(encryption, responder_key);
     byte_array * reencryption = encrypt_aes_128_cbc_prepend_iv(decryption, responder_key);
 

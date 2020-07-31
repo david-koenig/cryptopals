@@ -51,7 +51,7 @@ int main(int argc, char ** argv) {
 
         // Initiator sends a message to responder
         byte_array * message = cstring_to_bytes("Sending out an SOS.");
-        byte_array * initiator_key = derive_key(get_shared_secret(initiator_params));
+        byte_array * initiator_key = derive_key(get_shared_secret_bytes(initiator_params));
         byte_array * encryption = encrypt_aes_128_cbc_prepend_iv(message, initiator_key);
         printf("%-32s: ", "Initiator sends");
         print_byte_array_ascii(message);
@@ -81,7 +81,7 @@ int main(int argc, char ** argv) {
         printf("%-32s: ", "Hacker reads");
         print_byte_array_ascii(hacker_decryption);
         
-        byte_array * responder_key = derive_key(get_shared_secret(responder_params));
+        byte_array * responder_key = derive_key(get_shared_secret_bytes(responder_params));
         byte_array * decryption = decrypt_aes_128_cbc_prepend_iv(encryption, responder_key);
         printf("%-32s: ", "Responder reads");
         print_byte_array_ascii(decryption);

@@ -29,8 +29,8 @@ dh_params handshake1(const dh_public_params * initiator_public);
 // Run by initiator who has been given responder's public key to calculate shared secret.
 void handshake2(dh_params params, const dh_public_params * responder_public);
 
-char * get_shared_secret(const dh_params params);
-int get_shared_secret_len(const dh_params params);
+// Shared secret is stored as a null-terminated C-string of the hex print of a large number
+char * get_shared_secret_bytes(const dh_params params);
 
 // Create a public params struct with public key same as modulus.
 // Used by man-in-the-middle hacker.

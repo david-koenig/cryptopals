@@ -3,9 +3,6 @@
 
 #include <stdlib.h>
 
-
-#define MAX_SHARED_SECRET_LEN 500
-
 // struct sent by initiator of Diffie-Hellman connection
 typedef struct dh_public_params {
     mpz_t p; // modulus
@@ -15,8 +12,7 @@ typedef struct dh_public_params {
 
 typedef struct dh_private_params {
     mpz_t key; // private key
-    char shared_secret[MAX_SHARED_SECRET_LEN+1];
-    int	shared_secret_len;
+    byte_array * shared_secret;
 } dh_private_params;
 
 void print_keys(const char * prefix, const dh_params params) {
@@ -24,12 +20,8 @@ void print_keys(const char * prefix, const dh_params params) {
     gmp_printf("%s private key: %Zx\n", prefix, params.private->key);
 }
 
-char * get_shared_secret(const dh_params params) {
-    return params.private->shared_secret;
-}
-
-int get_shared_secret_len(const dh_params params) {
-    return params.private->shared_secret_len;
+char * get_shared_secret_bytes(const dh_params params) {
+    return (char *)params.private->shared_secret->bytes;
 }
 
 void free_dh_params(dh_params params) {
@@ -37,6 +29,7 @@ void free_dh_params(dh_params params) {
     mpz_clear(params.public->g);
     mpz_clear(params.public->key);
     mpz_clear(params.private->key);
+    free_byte_array(params.private->shared_secret);
     free(params.public);
     free(params.private);
 }
@@ -57,6 +50,7 @@ dh_params prehandshake(const char * p_hex_str, unsigned int g) {
     params.private = malloc(sizeof(dh_private_params));
     mpz_init_set_str(params.public->p, p_hex_str, 16);
     mpz_init_set_ui(params.public->g, g);
+    params.private->shared_secret = NULL;
 
     calculate_private_and_public_keys(params);
 
@@ -69,6 +63,7 @@ dh_params prehandshake_g_hex_str(const char * p_hex_str, const char * g_hex_str)
     params.private = malloc(sizeof(dh_private_params));
     mpz_init_set_str(params.public->p, p_hex_str, 16);
     mpz_init_set_str(params.public->g, g_hex_str, 16);
+    params.private->shared_secret = NULL;
 
     calculate_private_and_public_keys(params);
 
@@ -95,15 +90,22 @@ static void calculate_shared_secret(dh_params params, const mpz_t * other_side_p
     mpz_t secret;
     mpz_init(secret);
     mpz_powm(secret, *other_side_public_key, params.private->key, params.public->p);
-    params.private->shared_secret_len = gmp_sprintf(params.private->shared_secret, "%Zx", secret);
+
+    if (params.private->shared_secret) {
+        free_byte_array(params.private->shared_secret);
+    }
+
+    params.private->shared_secret = alloc_byte_array(2 + mpz_sizeinbase(secret, 16));
+    gmp_sprintf((char *)params.private->shared_secret->bytes, "%Zx", secret);
+
     mpz_clear(secret);
-    if (params.private->shared_secret_len > MAX_SHARED_SECRET_LEN) abort();
 }
 
 dh_params handshake1(const dh_public_params * initiator_public) {
     dh_params params;
     params.public = malloc(sizeof(dh_public_params));
     params.private = malloc(sizeof(dh_private_params));
+    params.private->shared_secret = NULL;
 
     // copy parameters from initiator side
     mpz_init_set(params.public->p, initiator_public->p);
