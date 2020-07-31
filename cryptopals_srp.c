@@ -1,6 +1,6 @@
 #include "cryptopals_srp.h"
 #include "cryptopals_gmp_private.h"
-#include "sha256.h"
+#include "cryptopals_sha256.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -108,24 +108,13 @@ void free_srp_client_handshake(srp_client_handshake * handshake) {
     free(handshake);
 }
 
-// SHA256(a|b)
-static byte_array * sha256_appended_byte_arrays(const byte_array * a, const byte_array * b) {
-    SHA256_CTX ctx;
-    sha256_init(&ctx);
-    sha256_update(&ctx, a->bytes, a->len);
-    sha256_update(&ctx, b->bytes, b->len);
-    byte_array * sha_out = alloc_byte_array(SHA256_OUTPUT_SIZE);
-    sha256_final(&ctx, sha_out->bytes);
-    return sha_out;
-}
-
 void register_user_server(srp_params * params,
                           const char * email,
                           const char * password,
                           const byte_array * salt) {
     const byte_array password_ba = {(uint8_t *)password, strlen(password)};
     // x = SHA256(salt|password)
-    byte_array * sha_out = sha256_appended_byte_arrays(salt, &password_ba);
+    byte_array * sha_out = sha256_2_byte_arrays(salt, &password_ba);
     mpz_t x;
     byte_array_to_mpz_init(x, sha_out);
 
@@ -197,7 +186,7 @@ static void calculate_u_init(mpz_t u, mpz_t A, mpz_t B) {
     mpz_init(u);
     byte_array * A_bytes = mpz_to_byte_array(A);
     byte_array * B_bytes = mpz_to_byte_array(B);
-    byte_array * u_bytes = sha256_appended_byte_arrays(A_bytes, B_bytes);
+    byte_array * u_bytes = sha256_2_byte_arrays(A_bytes, B_bytes);
     byte_array_to_mpz(u, u_bytes);
     free_byte_array(A_bytes);
     free_byte_array(B_bytes);
@@ -212,7 +201,7 @@ void calculate_client_shared_secret(srp_client_session * client,
 
     // x = SHA256(salt|password), same as server calculated and threw out
     const byte_array password_ba = {(uint8_t *)password, strlen(password)};
-    byte_array * sha_out = sha256_appended_byte_arrays(handshake->salt, &password_ba);
+    byte_array * sha_out = sha256_2_byte_arrays(handshake->salt, &password_ba);
     mpz_t x;
     byte_array_to_mpz_init(x, sha_out);
 

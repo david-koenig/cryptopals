@@ -1,5 +1,5 @@
 #include "cryptopals_hmac.h"
-#include "sha256.h"
+#include "cryptopals_sha256.h"
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -37,27 +37,6 @@ static uint8_t ipad_bytes[] =
 static const byte_array sha256_opad = {opad_bytes, SHA256_BLOCK_SIZE};
 static const byte_array sha256_ipad = {ipad_bytes, SHA256_BLOCK_SIZE};
 
-// Last argument allows for zero padded output larger than SHA256_OUTPUT_SIZE.
-static byte_array * sha256_byte_array(const byte_array * in, size_t out_size) {
-    SHA256_CTX ctx;
-    sha256_init(&ctx);
-    sha256_update(&ctx, in->bytes, in->len);
-    byte_array * out = alloc_byte_array(out_size);
-    sha256_final(&ctx, out->bytes);
-    return out;
-}
-
-static byte_array * sha256_2_byte_arrays(const byte_array * a,
-                                         const byte_array * b) {
-    SHA256_CTX ctx;
-    sha256_init(&ctx);
-    sha256_update(&ctx, a->bytes, a->len);
-    sha256_update(&ctx, b->bytes, b->len);
-    byte_array * out = alloc_byte_array(SHA256_OUTPUT_SIZE);
-    sha256_final(&ctx, out->bytes);
-    return out;
-}
-
 // HMAC(K,m) = H( (K' ^ opad) | H((K' ^ ipad) | m) )
 byte_array * sha256_hmac(const byte_array * key, const byte_array * message) {
     byte_array * k_prime = NULL;
@@ -70,7 +49,7 @@ byte_array * sha256_hmac(const byte_array * key, const byte_array * message) {
         memcpy(k_prime->bytes, key->bytes, key->len);
         my_key = k_prime;
     } else {
-        k_prime = sha256_byte_array(key, SHA256_BLOCK_SIZE);
+        k_prime = sha256_byte_array_zero_pad(key, SHA256_BLOCK_SIZE);
         my_key = k_prime;
     }
 
@@ -89,34 +68,6 @@ byte_array * sha256_hmac(const byte_array * key, const byte_array * message) {
 }
 
 void test_sha256_hmac() {
-
-    byte_array * empty = cstring_to_bytes("");
-    byte_array * abc = cstring_to_bytes("abc");
-    byte_array * long_string = cstring_to_bytes("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
-
-    byte_array * sha256_test1 = sha256_byte_array(empty, SHA256_OUTPUT_SIZE);
-    byte_array * sha256_test2 = sha256_byte_array(abc, SHA256_OUTPUT_SIZE);
-    byte_array * sha256_test3 = sha256_byte_array(long_string, SHA256_OUTPUT_SIZE);
-
-    byte_array * sha256_test1_answer = hex_to_bytes("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
-    byte_array * sha256_test2_answer = hex_to_bytes("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
-    byte_array * sha256_test3_answer = hex_to_bytes("248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1");
-
-    assert(byte_arrays_equal(sha256_test1, sha256_test1_answer));
-    assert(byte_arrays_equal(sha256_test2, sha256_test2_answer));
-    assert(byte_arrays_equal(sha256_test3, sha256_test3_answer));
-    printf("SHA256 test vectors pass!\n");
-    
-    free_byte_array(empty);
-    free_byte_array(abc);
-    free_byte_array(long_string);
-    free_byte_array(sha256_test1);
-    free_byte_array(sha256_test2);
-    free_byte_array(sha256_test3);
-    free_byte_array(sha256_test1_answer);
-    free_byte_array(sha256_test2_answer);
-    free_byte_array(sha256_test3_answer);
-    
     byte_array * key1 = cstring_to_bytes("key");
     byte_array * message1 = cstring_to_bytes("The quick brown fox jumps over the lazy dog");
     byte_array * hmac_answer1 = hex_to_bytes("f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8");
