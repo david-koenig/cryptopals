@@ -5,20 +5,19 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 // In real life, this would be a hash table indexed by emails (or other usernames)
 // storing (salt, v) pairs.
 typedef struct srp_server_private_storage {
     byte_array * email;
-    byte_array * salt;
-    mpz_t v;
+    byte_array * salt; // Server will hand this to client before verifying password.
+    mpz_t v; // (g ** SHA256(salt|password)) mod N, i.e., the password hash
 } srp_server_private_storage;
 
 typedef struct srp_params {
-    mpz_t N;
-    mpz_t g;
-    mpz_t k;
+    mpz_t N; // modulus, a NIST prime
+    mpz_t g; // generator
+    mpz_t k; // another public parameter, usually k=3
     srp_server_private_storage server;
 } srp_params;
 
@@ -39,14 +38,13 @@ srp_params * init_srp(const char * N_hex,
     mpz_init_set_str(params->N, N_hex, 16);
     mpz_init_set_ui(params->g, g);
     mpz_init_set_ui(params->k, k);
-    // initialize but do not set
+    // Initialize but do not set.
     mpz_init(params->server.v);
-    // setting to null makes free_byte_array safe if they don't get set
+    // Setting to null makes free_byte_array safe if they don't get set.
     params->server.email = NULL;
     params->server.salt = NULL;
     return params;
 }
-
 
 typedef struct srp_client_session {
     mpz_t A; // client's public key
@@ -110,57 +108,6 @@ void free_srp_client_handshake(srp_client_handshake * handshake) {
     free(handshake);
 }
 
-// Initializes mpz_t in first argument. Be sure to call mpz_clear on it later.
-static void byte_array_to_mpz_init(mpz_t out, byte_array * in) {
-    byte_array * hex = byte_array_to_hex_byte_array(in);
-    mpz_init_set_str(out, (const char *)hex->bytes, 16);
-    free_byte_array(hex);
-}
-
-// Same as previous, but assumes mpz_t in first argument is already initialized.
-static void byte_array_to_mpz(mpz_t out, byte_array * in) {
-    byte_array * hex = byte_array_to_hex_byte_array(in);
-    mpz_set_str(out, (const char *)hex->bytes, 16);
-    free_byte_array(hex);
-}
-
-// Initializes byte array that is returned. Be sure to call free_byte_array on it later.
-static byte_array * mpz_to_byte_array(mpz_t in) {
-    // Normally need 2 more than mpz_sizeinbase, for possible negative sign
-    // and null byte. We're only dealing with positive integers, so probably
-    // could just use 1 more, but just playing it safe.
-    size_t size_needed = 2 + mpz_sizeinbase(in, 16);
-    byte_array * hex = alloc_byte_array(size_needed);
-    size_t len = gmp_snprintf((char *)hex->bytes, size_needed, "%Zx", in);
-    if (len >= size_needed) {
-        fprintf(stderr, "%s: mpz_sizeinbase incorrectly determined size of mpz\n", __func__);
-        exit(1);
-    }
-    // mpz_sizeinbase does not include negative sign in its count, but gmp_snprintf does
-    hex->len = len + 1;
-    byte_array * out = hex_to_bytes((const char *)hex->bytes);
-    free_byte_array(hex);
-    return out;
-}
-
-void test_conversion_functions(const char * hex) {
-    printf("%-11s = %s\n", "input", hex);
-    mpz_t in;
-    mpz_init_set_str(in, hex, 16);
-    gmp_printf("%-11s = %Zx\n", "as mpz", in);
-    byte_array * bytes = mpz_to_byte_array(in);
-    printf("%-11s = ", "as bytes");
-    print_byte_array(bytes);
-    mpz_t copy;
-    byte_array_to_mpz_init(copy, bytes);
-    gmp_printf("%-11s = %Zx\n", "back to mpz", copy);
-    assert(!mpz_cmp(in, copy));
-    printf("tests passed!\n");
-    mpz_clear(in);
-    mpz_clear(copy);
-    free_byte_array(bytes);
-}
-
 // SHA256(a|b)
 static byte_array * sha256_appended_byte_arrays(const byte_array * a, const byte_array * b) {
     SHA256_CTX ctx;
@@ -194,7 +141,7 @@ void register_user_server(srp_params * params,
     params->server.salt = copy_byte_array(salt);
     params->server.email = cstring_to_bytes(email);
 
-    // throw away x, this must be done for security
+    // Throw away x. This must be done for security.
     mpz_clear(x);
     free_byte_array(sha_out);
 }
