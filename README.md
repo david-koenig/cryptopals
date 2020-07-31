@@ -14,12 +14,12 @@ To install them on Amazon Linux or other yum-based systems:
 
     sudo yum install gcc-c++ openssl-devel gmp-devel cmake
 
-Here is an example build recipe using OpenSSL installed in a nonstandard place (as Brew does on Mac),
-starting from the parent directory of cryptopals.
+Here is an example build recipe using C compilers and OpenSSL installed in nonstandard places (as Brew
+does on Mac), starting from the parent directory of cryptopals.
 
     mkdir cryptopals_build
     cd cryptopals_build
-    cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1 ../cryptopals
+    cmake -DCMAKE_C_COMPILER=/usr/local/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-10 -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1 ../cryptopals
     cmake --build .
 
 There are scripts called `run_set1_challenges.sh`, etc., which will automatically run the binaries
