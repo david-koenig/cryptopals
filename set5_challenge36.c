@@ -14,7 +14,8 @@ int main(int argc, char ** argv) {
     const char * password = argv[3];
     init_random_encrypt(seed);
     init_gmp(seed);
-    
+
+    // A NIST prime to be used as modulus of operations similar to Diffie-Helman key exchange.
     const char * modulus =
         "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024"
         "e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd"
@@ -24,24 +25,40 @@ int main(int argc, char ** argv) {
         "c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552"
         "bb9ed529077096966d670c354e4abc9804f1746c08ca237327fff"
         "fffffffffffff";
+
+    // SETUP
     
-    byte_array * salt = random_128_bits();
+    // Server configures itself for SRP.
     srp_params * params = init_srp(modulus, 2, 3);
+
+    // From a security point of view, either side can generate the salt, but in practice the
+    // client does, so that the registration of a username/password can be done in one step.
+    byte_array * salt = random_128_bits();
+
+    // Client registers its email (username) and password with server.
     register_user_server(params, email, password, salt);
 
+
+    // LOGIN ATTEMPT
+
+    // User types email into client, which constructs handshake to begin login attempt.
     srp_client_session * client;
-    srp_client_handshake * client_handshake = init_srp_client_session(&client,
-                                                                      params,
-                                                                      email);
+    srp_client_handshake * client_handshake =
+        construct_client_handshake(&client, params, email);
+
+    // Server receives client handshake and now has enough information to calculate
+    // shared secret. Server passes back its own handshake.
     srp_server_session * server;
-    srp_server_handshake * server_handshake = receive_client_handshake(&server,
-                                                                       params,
-                                                                       client_handshake);
+    srp_server_handshake * server_handshake =
+        receive_client_handshake(&server, params, client_handshake);
 
-    calculate_client_shared_secret(client, params, server_handshake, password);
-    byte_array * hmac = hmac_client_secret(client, salt);
+    // Client now has enough information to calculate shares secret. Client passes
+    // back HMAC of the shared secret.
+    byte_array * hmac =
+        calculate_client_hmac(client, params, server_handshake, password);
 
-    calculate_server_shared_secret(server, params);
+    // Server compares its HMAC of the shared secret to the one received from client,
+    // and decides whether to allow the login.
     bool pass = validate_client_hmac(server, params, hmac);
 
     int ret;
