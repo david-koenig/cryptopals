@@ -47,6 +47,33 @@ srp_params * init_srp(const char * N_hex,
     return params;
 }
 
+void register_user_server(srp_params * params,
+                          const char * email,
+                          const char * password,
+                          const byte_array * salt) {
+    const byte_array password_ba = {(uint8_t *)password, strlen(password)};
+    // x = SHA256(salt|password)
+    byte_array * sha_out = sha256_2_byte_arrays(salt, &password_ba);
+    mpz_t x;
+    byte_array_to_mpz_init(x, sha_out);
+
+    // v = (g ** x) mod N, store in server params
+    mpz_powm(params->server.v, params->g, x, params->N);
+
+    // In real life, server stores each user's (salt, v) indexed by email
+    // (or other username). This is all that will be needed to verify the
+    // password later. To simplify the code, we will just verify that the
+    // email user gives us later is the one we already know before returning
+    // the salt, and otherwise stop. In practice, this would create a system
+    // which could only have one user.
+    params->server.salt = copy_byte_array(salt);
+    params->server.email = cstring_to_bytes(email);
+
+    // Throw away x. This must be done for security.
+    mpz_clear(x);
+    free_byte_array(sha_out);
+}
+
 typedef struct srp_client_session {
     mpz_t A; // client's public key
     mpz_t a; // client's private key
@@ -100,33 +127,6 @@ void free_srp_client_handshake(srp_client_handshake * handshake) {
     free_byte_array(handshake->email);
     mpz_clear(handshake->A);
     free(handshake);
-}
-
-void register_user_server(srp_params * params,
-                          const char * email,
-                          const char * password,
-                          const byte_array * salt) {
-    const byte_array password_ba = {(uint8_t *)password, strlen(password)};
-    // x = SHA256(salt|password)
-    byte_array * sha_out = sha256_2_byte_arrays(salt, &password_ba);
-    mpz_t x;
-    byte_array_to_mpz_init(x, sha_out);
-
-    // v = (g ** x) mod N, store in server params
-    mpz_powm(params->server.v, params->g, x, params->N);
-
-    // In real life, server stores each user's (salt, v) indexed by email
-    // (or other username). This is all that will be needed to verify the
-    // password later. To simplify the code, we will just verify that the
-    // email user gives us later is the one we already know before returning
-    // the salt, and otherwise stop. In practice, this would create a system
-    // which could only have one user.
-    params->server.salt = copy_byte_array(salt);
-    params->server.email = cstring_to_bytes(email);
-
-    // Throw away x. This must be done for security.
-    mpz_clear(x);
-    free_byte_array(sha_out);
 }
 
 srp_server_handshake * receive_client_handshake(srp_server_session ** server,
