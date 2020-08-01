@@ -52,8 +52,9 @@ int main(int argc, char ** argv) {
     srp_server_handshake * server_handshake =
         receive_client_handshake(&server, params, client_handshake);
 
-    // Client now has enough information to calculate shares secret. Client passes
-    // back HMAC of the shared secret.
+    // Server handshake is received, and user types password into client. Client now has
+    // enough information to calculate shared secret. Client sends HMAC of shared secret
+    // to server.
     byte_array * hmac =
         calculate_client_hmac(client, params, server_handshake, password);
 
