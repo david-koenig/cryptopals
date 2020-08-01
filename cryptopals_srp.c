@@ -79,16 +79,16 @@ typedef struct srp_client_session {
     mpz_t a; // client's private key
 } srp_client_session;
 
-typedef struct srp_client_handshake {
-    mpz_t A; // client's public key
-    byte_array * email;
-} srp_client_handshake;
-
 typedef struct srp_server_session {
     mpz_t A; // client's public key
     mpz_t B; // server's public key
     mpz_t b; // server's private key
 } srp_server_session;
+
+typedef struct srp_client_handshake {
+    mpz_t A; // client's public key
+    byte_array * email;
+} srp_client_handshake;
 
 typedef struct srp_server_handshake {
     mpz_t B; // server's public key
@@ -114,6 +114,16 @@ srp_client_handshake * construct_client_handshake(srp_client_session ** client,
     mpz_init_set(handshake->A, my_client->A);
 
     *client = my_client;
+    return handshake;
+}
+
+srp_client_handshake * forge_client_handshake(const char * A_hex,
+                                              unsigned int multiplier,
+                                              const char * email) {
+    srp_client_handshake * handshake = malloc(sizeof(srp_client_handshake));
+    mpz_init_set_str(handshake->A, A_hex, 16);
+    mpz_mul_ui(handshake->A, handshake->A, multiplier);
+    handshake->email = cstring_to_bytes(email);
     return handshake;
 }
 
@@ -173,6 +183,10 @@ void free_srp_server_handshake(srp_server_handshake * handshake) {
     free(handshake);
 }
 
+const byte_array * get_salt_const_p(srp_server_handshake * handshake) {
+    return (const byte_array *)handshake->salt;
+}
+
 // u = SHA256(A|B)
 static void calculate_u_init(mpz_t u, mpz_t A, mpz_t B) {
     mpz_init(u);
@@ -192,6 +206,14 @@ static byte_array * hmac_secret(const mpz_t secret, const byte_array * salt) {
     byte_array * hmac = hmac_sha256(K, salt);
     free_byte_array(secret_ba);
     free_byte_array(K);
+    return hmac;
+}
+
+byte_array * forge_hmac(const char * secret_hex, const byte_array * salt) {
+    mpz_t S;
+    mpz_init_set_str(S, secret_hex, 16);
+    byte_array * hmac = hmac_secret(S, salt);
+    mpz_clear(S);
     return hmac;
 }
 

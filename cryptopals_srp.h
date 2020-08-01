@@ -59,6 +59,20 @@ bool validate_client_hmac(srp_server_session * server,
                           srp_params * params,
                           const byte_array * client_hmac);
 
+// Nefarious client doesn't do a real private key calculation but just constructs
+// a handshake with a value for public key A of hacker's choosing.
+// Value of A that hacker will use is (A_hex * multiplier).
+srp_client_handshake * forge_client_handshake(const char * A_hex,
+                                              unsigned int multiplier,
+                                              const char * email);
+
+// Nefarious client calculates an HMAC based direcly on shared secret value.
+byte_array * forge_hmac(const char * secret_hex, const byte_array * salt);
+
+// Get a constant pointer to the salt from the server handshake.
+// Does not copy byte array.
+const byte_array * get_salt_const_p(srp_server_handshake * handshake);
+
 void free_srp_params(srp_params * params);
 void free_srp_client_session(srp_client_session * client);
 void free_srp_client_handshake(srp_client_handshake * handshake);
