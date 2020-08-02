@@ -247,7 +247,7 @@ byte_array * calculate_client_hmac(srp_client_session * client,
     mpz_t S;
     mpz_init(S);
 
-    // S = (B - k * g**x) ** (B - k * g**x) mod N
+    // S = (B - k * g**x) ** (a + u * x) mod N
     mpz_powm(S, base, exponent, params->N);
 
     mpz_clear(x);
