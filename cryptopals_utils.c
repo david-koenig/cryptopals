@@ -198,8 +198,8 @@ byte_array * base64_to_bytes(const char * base64_str) {
 }
 
 byte_array * sub_byte_array(const byte_array * ba, size_t x, size_t y) {
-    if (x >= y) {
-        fprintf(stderr, "%s: starting index %li >= ending index %li\n", __func__, x, y);
+    if (x > y) {
+        fprintf(stderr, "%s: starting index %li > ending index %li\n", __func__, x, y);
         exit(1);
     }
     if (y > ba->len) {

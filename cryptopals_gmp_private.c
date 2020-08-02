@@ -48,3 +48,15 @@ void test_conversion_functions(const char * hex) {
     mpz_clear(copy);
     free_byte_array(bytes);
 }
+
+void test_zero_conversion() {
+    mpz_t zero;
+    mpz_init(zero);
+    byte_array * zero_mpz_as_ba = mpz_to_byte_array(zero);
+
+    assert(zero_mpz_as_ba->len == 1);
+    assert(zero_mpz_as_ba->bytes[0] == 0);
+
+    free_byte_array(zero_mpz_as_ba);
+    mpz_clear(zero);
+}
