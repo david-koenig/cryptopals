@@ -40,7 +40,7 @@ int main(int argc, char ** argv) {
         srp_client_handshake * client_handshake =
             forge_client_handshake(modulus, multiplier, email);
 
-        // Server does not have safeguard for bad A valueq and will calculate a shared secret
+        // Server does not have safeguard for bad A value and will calculate a shared secret
         // of "0". Server passes back its own handshake.
         srp_server_session * server;
         srp_server_handshake * server_handshake =
