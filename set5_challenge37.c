@@ -6,7 +6,7 @@
 
 int main(int argc, char ** argv) {
     if (argc < 4) {
-        fprintf(stderr, "Usage: %s seed email password\nSecure Remote Password (SRP)\n", argv[0]);
+        fprintf(stderr, "Usage: %s seed email password\nHack Secure Remote Password (SRP)\n", argv[0]);
         return 1;
     }
     unsigned int seed = atoi(argv[1]);
