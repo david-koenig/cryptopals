@@ -27,10 +27,10 @@ add_library(Cryptopals
 target_link_libraries(Cryptopals ${OPENSSL_CRYPTO_LIBRARY} ${Gmp})
 target_include_directories(Cryptopals PRIVATE ${OPENSSL_INCLUDE_DIR} ${Gmp_path})
 
+link_libraries(Cryptopals)
+
 file(GLOB cryptopals_cpplib "cryptopals*.cpp")
 add_library(Cryptopals_cpp ${cryptopals_cpplib})
-
-link_libraries(Cryptopals)
 
 add_executable(aes_128_ecb_test aes_128_ecb_test.c)
 add_executable(sha1test sha1test.c)
