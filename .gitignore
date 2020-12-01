@@ -1,7 +1,3 @@
 *~
 *.dSYM
 *.o
-set[1-5]_challenge[0-9]?
-set[1-5]_challenge[0-9]?[a-b]
-set[1-2]_challenge?
-*test
