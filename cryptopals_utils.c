@@ -81,9 +81,10 @@ byte_array * hex_to_bytes(const char * hex_str) {
     byte_array * ba = alloc_byte_array((len+1)/2);
     uint8_t byte;
 
+    size_t offset = len&1;
     for (idx = 0 ; idx < len ; idx++) {
         byte = hex_char_to_byte(hex_str[idx]);
-        ba->bytes[idx/2] += byte << ((1^(idx&1))<<2); // shifts either 0 or 4 bits if odd or even
+        ba->bytes[(idx+offset)/2] += byte << ((1^offset^(idx&1))<<2); // shifts either 0 or 4 bits if odd or even
     }
     return ba;
 }
