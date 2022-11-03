@@ -21,7 +21,7 @@ int main(int argc, char ** argv) {
     // This doesn't check that the generated moduli are pairwise coprime.
     // But as long as the random number generation is reasonable, the chance
     // of that is negligible.
-        params[idx] = rsa_keygen();
+        params[idx] = rsa_keygen(256);
         cipher[idx] = rsa_encrypt(params[idx], plain);
     }
     

@@ -10,7 +10,7 @@ int main(int argc, char ** argv) {
     }
     unsigned int seed =	atoi(argv[1]);
     init_gmp(seed);
-    rsa_params * params = rsa_keygen();
+    rsa_params * params = rsa_keygen(256);
 
     byte_array * plain = cstring_to_bytes("Testing RSA encryption and decryption");
     byte_array * cipher = rsa_encrypt(params, plain);

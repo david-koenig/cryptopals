@@ -11,8 +11,8 @@ typedef struct rsa_params rsa_params;
 
 void free_rsa_params(rsa_params * params);
 
-// Uses fixed encryption key of e=3 and generates modulus of fixed bit length.
-rsa_params * rsa_keygen();
+// Uses fixed public key e=3
+rsa_params * rsa_keygen(unsigned long mod_bits);
 
 byte_array * rsa_encrypt(const rsa_params * params, const byte_array * plain);
 byte_array * rsa_decrypt(const rsa_params * params, const byte_array * cipher);

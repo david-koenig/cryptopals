@@ -16,9 +16,7 @@ void free_rsa_params(rsa_params * params) {
     free(params);
 }
 
-rsa_params * rsa_keygen() {
-    const mp_bitcnt_t bits = 256; // number of bits in random primes
-    
+rsa_params * rsa_keygen(unsigned long mod_bits) {
     rsa_params * params = malloc(sizeof(rsa_params));
     mpz_init_set_ui(params->e, 3);
     mpz_init(params->d);
@@ -30,9 +28,9 @@ rsa_params * rsa_keygen() {
     mpz_init(et);
     
     do {
-        mpz_urandomb(p, cryptopals_gmp_randstate, bits);
+        mpz_urandomb(p, cryptopals_gmp_randstate, mod_bits);
         mpz_nextprime(p, p);
-        mpz_urandomb(q, cryptopals_gmp_randstate, bits);
+        mpz_urandomb(q, cryptopals_gmp_randstate, mod_bits);
         mpz_nextprime(q, q);
         mpz_mul(params->n, p, q);
     
