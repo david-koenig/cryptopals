@@ -83,7 +83,7 @@ void test_hmac_sha256() {
     byte_array * message3 = cstring_to_bytes("This is a test using a larger than block-size key and a larger t"
                                              "han block-size data. The key needs to be hashed before being use"
                                              "d by the HMAC algorithm.");
-    byte_array *hmac_answer3 = hex_to_bytes("9b09ffa71b942fcb27635fbcd5b0e944bfdc63644f0713938a7f51535c3a35e2");
+    byte_array * hmac_answer3 = hex_to_bytes("9b09ffa71b942fcb27635fbcd5b0e944bfdc63644f0713938a7f51535c3a35e2");
 
     byte_array * hmac1 = hmac_sha256(key1, message1);
     byte_array * hmac2 = hmac_sha256(key2, message2);

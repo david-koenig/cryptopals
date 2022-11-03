@@ -22,7 +22,7 @@ byte_array * random_encrypt(const byte_array * plain);
 byte_array * mystery_encrypt(const byte_array * plain);
 
 // Same as mystery encrypt but with random number of random bits prepended to plain.
-byte_array* harder_mystery_encrypt(const byte_array * plain);
+byte_array * harder_mystery_encrypt(const byte_array * plain);
 
 // These do a straightforward AES-128 encryption and decryption to unmodified plaintext using the mystery key.
 // The attacker does not have access to them. They are just helper functions for the C++ code
