@@ -14,18 +14,20 @@ int main(int argc, char ** argv) {
     init_gmp(seed);
     byte_array * plain = cstring_to_bytes(desc);
 
-    rsa_params * params[3];
-    byte_array * cipher[3];
+    const rsa_public_key * public[3];
+    const byte_array * cipher[3];
     
     for (int idx = 0 ; idx < 3 ; idx++) {
-    // This doesn't check that the generated moduli are pairwise coprime.
-    // But as long as the random number generation is reasonable, the chance
-    // of that is negligible.
-        params[idx] = rsa_keygen(256);
-        cipher[idx] = rsa_encrypt(params[idx], plain);
+        // This doesn't check that the generated moduli are pairwise coprime.
+        // But as long as the random number generation is reasonable, the chance
+        // of that is negligible.
+        rsa_params params = rsa_keygen(256);
+        free_rsa_private_key(params.private);
+        public[idx] = params.public;
+        cipher[idx] = rsa_encrypt(params.public, plain);
     }
     
-    byte_array * cracked_plain = rsa_broadcast_attack(params, cipher);
+    byte_array * cracked_plain = rsa_broadcast_attack(public, cipher);
     printf("Plaintext: ");
     print_byte_array_ascii(plain);
     printf("Cracked! : ");
@@ -33,8 +35,8 @@ int main(int argc, char ** argv) {
     assert(byte_arrays_equal(plain, cracked_plain));
     
     for (int idx = 0; idx < 3 ; idx++) {
-        free_rsa_params(params[idx]);
-        free_byte_array(cipher[idx]);
+        free_rsa_public_key(public[idx]);
+        free_byte_array((byte_array *)cipher[idx]);
     }
     free_byte_array(cracked_plain);
     free_byte_array(plain);
