@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
     // take advantage of by posing as the server in a MITM attack. Normal usage is below.
     srp_params * params = init_srp(modulus, 2, 0);
 
-    byte_array * salt = random_128_bits();
+    byte_array salt = random_128_bits();
     register_user_server(params, email, password, salt);
 
 
@@ -51,7 +51,7 @@ int main(int argc, char ** argv) {
         receive_client_handshake(&server, params, client_handshake);
 
     // Client's shared secret calculation simplifies to: S = B ** (a + u * x) mod N
-    byte_array * hmac =
+    byte_array hmac =
         calculate_client_hmac(client, params, server_handshake, password);
 
     // Server's shared secret calculation is unchanged: S = (A * v ** u)**b mod N

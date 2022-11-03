@@ -2,7 +2,7 @@
 #include <sstream>
 #include <iostream>
 
-void test_cipher(byte_array * cipher) {
+void test_cipher(byte_array cipher) {
     if (uri_decrypt_cbc(cipher)) {
         std::cout << "Admin access granted!" << std::endl;
     } else {
@@ -26,14 +26,14 @@ int main(int argc, char ** argv) {
 
     std::string s("3admin5true");
 
-    byte_array * cipher = uri_encrypt_cbc(s);
+    byte_array cipher = uri_encrypt_cbc(s);
 
     test_cipher(cipher);
 
     std::cout << "Manipulating a few bits in the cipher before attempting decryption again..." << std::endl;
 
-    cipher->bytes[16] ^= '3' ^ ';';
-    cipher->bytes[22] ^= '5' ^ '=';
+    cipher.bytes[16] ^= '3' ^ ';';
+    cipher.bytes[22] ^= '5' ^ '=';
 
     test_cipher(cipher);
 

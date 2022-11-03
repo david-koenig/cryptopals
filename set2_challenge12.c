@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-bool compare_first_two_blocks(const byte_array * ba, size_t block_size) {
-    if (memcmp(ba->bytes, ba->bytes + block_size, block_size)) {
+bool compare_first_two_blocks(const byte_array ba, size_t block_size) {
+    if (memcmp(ba.bytes, ba.bytes + block_size, block_size)) {
         printf("%s: First two blocks of cipher disagree, does not seem to be ECB\n", __func__);
         return false;
     }
@@ -14,8 +14,8 @@ bool compare_first_two_blocks(const byte_array * ba, size_t block_size) {
 }
 
 int main(int argc, char ** argv) {
-    byte_array * long_plain = NULL;
-    byte_array * long_cipher = NULL;
+    byte_array long_plain = NO_BA;
+    byte_array long_cipher = NO_BA;
     size_t block_size;
     size_t target_len;
 

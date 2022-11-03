@@ -50,14 +50,14 @@ int main(int argc, char ** argv) {
         handshake2(initiator_params, responder_params.public);
 
         // Initiator sends a message to responder
-        byte_array * message = cstring_to_bytes("Sending out an SOS.");
-        byte_array * initiator_key = derive_key(get_shared_secret_bytes(initiator_params));
-        byte_array * encryption = encrypt_aes_128_cbc_prepend_iv(message, initiator_key);
+        byte_array message = cstring_to_bytes("Sending out an SOS.");
+        byte_array initiator_key = derive_key(get_shared_secret_bytes(initiator_params));
+        byte_array encryption = encrypt_aes_128_cbc_prepend_iv(message, initiator_key);
         printf("%-32s: ", "Initiator sends");
         print_byte_array_ascii(message);
 
-        byte_array * hacker_key;
-        byte_array * hacker_decryption;
+        byte_array hacker_key;
+        byte_array hacker_decryption;
         if (secrets[idx]) {
             hacker_key = derive_key(secrets[idx]);
             hacker_decryption = decrypt_aes_128_cbc_prepend_iv(encryption, hacker_key);
@@ -65,12 +65,12 @@ int main(int argc, char ** argv) {
             printf("Attacker attempts with secret \"1\"\n");
             hacker_key = derive_key("1");
             hacker_decryption = decrypt_aes_128_cbc_prepend_iv(encryption, hacker_key);
-            if (!hacker_decryption) {
+            if (!hacker_decryption.bytes) {
                 printf("Attacker attempts with secret \"p-1\"\n");
                 free_byte_array(hacker_key);
                 hacker_key = derive_key(modulus_minus_one);
                 hacker_decryption = decrypt_aes_128_cbc_prepend_iv(encryption, hacker_key);
-                if (hacker_decryption) {
+                if (hacker_decryption.bytes) {
                     printf("Attack succeeded!\n");
                 } else {
                     fprintf(stderr, "Attack failed!\n");
@@ -81,21 +81,21 @@ int main(int argc, char ** argv) {
         printf("%-32s: ", "Hacker reads");
         print_byte_array_ascii(hacker_decryption);
         
-        byte_array * responder_key = derive_key(get_shared_secret_bytes(responder_params));
-        byte_array * decryption = decrypt_aes_128_cbc_prepend_iv(encryption, responder_key);
+        byte_array responder_key = derive_key(get_shared_secret_bytes(responder_params));
+        byte_array decryption = decrypt_aes_128_cbc_prepend_iv(encryption, responder_key);
         printf("%-32s: ", "Responder reads");
         print_byte_array_ascii(decryption);
 
-        byte_array * message2 = cstring_to_bytes("Message in a bottle.");
-        byte_array * encryption2 = encrypt_aes_128_cbc_prepend_iv(message2, responder_key);
+        byte_array message2 = cstring_to_bytes("Message in a bottle.");
+        byte_array encryption2 = encrypt_aes_128_cbc_prepend_iv(message2, responder_key);
         printf("%-32s: ", "Responder sends");
         print_byte_array_ascii(message2);
 
-        byte_array * hacker_decryption2 = decrypt_aes_128_cbc_prepend_iv(encryption2, hacker_key);
+        byte_array hacker_decryption2 = decrypt_aes_128_cbc_prepend_iv(encryption2, hacker_key);
         printf("%-32s: ", "Hacker reads");
         print_byte_array_ascii(hacker_decryption2);
 
-        byte_array * decryption2 = decrypt_aes_128_cbc_prepend_iv(encryption2, initiator_key);
+        byte_array decryption2 = decrypt_aes_128_cbc_prepend_iv(encryption2, initiator_key);
         printf("%-32s: ", "Initiator reads");
         print_byte_array_ascii(decryption2);
         

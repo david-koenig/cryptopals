@@ -11,9 +11,9 @@ int main(int argc, char **argv)
     }
     size_t len = atol(argv[1]);
 
-    byte_array * key = cstring_to_bytes("YELLOW SUBMARINE");
+    byte_array key = cstring_to_bytes("YELLOW SUBMARINE");
 
-    byte_array * plaintext = alloc_byte_array(len);
+    byte_array plaintext = alloc_byte_array(len);
     set_all_bytes(plaintext, 'A');
     printf("input length = %li\ninput = ", len);
     print_byte_array_ascii(plaintext);
@@ -21,13 +21,13 @@ int main(int argc, char **argv)
     init_openssl();
 
     printf("\nEncrypting...\n");
-    byte_array * cipher = encrypt_aes_128_ecb(plaintext, key);
-    printf("cipher length = %li\ncipher = ", cipher->len);
+    byte_array cipher = encrypt_aes_128_ecb(plaintext, key);
+    printf("cipher length = %li\ncipher = ", cipher.len);
     print_byte_array(cipher);
 
     printf("\nDecrypting...\n");
-    byte_array * plain2 = decrypt_aes_128_ecb(cipher, key);
-    printf("output length = %li\noutput = ", plain2->len);
+    byte_array plain2 = decrypt_aes_128_ecb(cipher, key);
+    printf("output length = %li\noutput = ", plain2.len);
     print_byte_array_ascii(plain2);
 
     if (byte_arrays_equal(plaintext, plain2)) {

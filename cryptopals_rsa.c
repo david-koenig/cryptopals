@@ -63,31 +63,31 @@ rsa_params rsa_keygen(unsigned long mod_bits) {
     return params;
 }
 
-byte_array * rsa_encrypt(const rsa_public_key * public, const byte_array * plain) {
+byte_array rsa_encrypt(const rsa_public_key * public, const byte_array plain) {
     mpz_t myplain, mycipher;
     mpz_init(mycipher);
     byte_array_to_mpz_init(myplain, plain);
     mpz_powm(mycipher, myplain, public->e, public->n);
 
-    byte_array * cipher = mpz_to_byte_array(mycipher);
+    byte_array cipher = mpz_to_byte_array(mycipher);
     mpz_clear(myplain);
     mpz_clear(mycipher);
     return cipher;
 }
 
-byte_array * rsa_decrypt(const rsa_private_key * private, const byte_array * cipher) {
+byte_array rsa_decrypt(const rsa_private_key * private, const byte_array cipher) {
     mpz_t mycipher, myplain;
     mpz_init(myplain);
     byte_array_to_mpz_init(mycipher, cipher);
     mpz_powm(myplain, mycipher, private->d, private->n);
 
-    byte_array * plain = mpz_to_byte_array(myplain);
+    byte_array plain = mpz_to_byte_array(myplain);
     mpz_clear(mycipher);
     mpz_clear(myplain);
     return plain;
 }
 
-byte_array * rsa_broadcast_attack(const rsa_public_key * public[3], const byte_array * cipher[3]) {
+byte_array rsa_broadcast_attack(const rsa_public_key * public[3], const byte_array cipher[3]) {
     mpz_t ans, N;
     mpz_t mycipher[3], m[3], inv[3];
     mpz_init(ans);
@@ -114,7 +114,7 @@ byte_array * rsa_broadcast_attack(const rsa_public_key * public[3], const byte_a
         exit(-2);
     }
 
-    byte_array * plain = mpz_to_byte_array(ans);
+    byte_array plain = mpz_to_byte_array(ans);
     mpz_clear(ans);
     mpz_clear(N);
     for (int idx = 0 ; idx < 3 ; idx++) {

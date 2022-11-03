@@ -33,11 +33,11 @@ namespace cryptopals {
     class mt19937_cipher {
     public:
         mt19937_cipher(uint32_t s) : seed(s) {}
-        byte_array * encrypt(const byte_array * plain);
-        byte_array * decrypt(const byte_array * cipher);
+        byte_array encrypt(const byte_array plain);
+        byte_array decrypt(const byte_array cipher);
 
     private:
         uint32_t seed;
-        byte_array * encrypt_decrypt(const byte_array * input);
+        byte_array encrypt_decrypt(const byte_array input);
     };
 }

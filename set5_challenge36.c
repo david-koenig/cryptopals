@@ -33,7 +33,7 @@ int main(int argc, char ** argv) {
 
     // From a security point of view, either side can generate the salt, but in practice the
     // client does, so that the registration of a username/password can be done in one step.
-    byte_array * salt = random_128_bits();
+    byte_array salt = random_128_bits();
 
     // Client registers its email (username) and password with server.
     register_user_server(params, email, password, salt);
@@ -55,7 +55,7 @@ int main(int argc, char ** argv) {
     // Server handshake is received, and user types password into client. Client now has
     // enough information to calculate shared secret. Client sends HMAC of shared secret
     // to server.
-    byte_array * hmac =
+    byte_array hmac =
         calculate_client_hmac(client, params, server_handshake, password);
 
     // Server compares its HMAC of the shared secret to the one received from client,

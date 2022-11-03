@@ -27,7 +27,7 @@ int main(int argc, char ** argv) {
 
     // SETUP
     srp_params * params = init_srp(modulus, 2, 3);
-    byte_array * salt = random_128_bits();
+    byte_array salt = random_128_bits();
     register_user_server(params, email, password, salt);
 
 
@@ -47,7 +47,7 @@ int main(int argc, char ** argv) {
             receive_client_handshake(&server, params, client_handshake);
 
         // Hacker has forced bad shared secret value, and calculates HMAC based on that.
-        byte_array * hmac = forge_hmac("0", get_salt_const_p(server_handshake));
+        byte_array hmac = forge_hmac("0", get_salt_const_p(server_handshake));
 
         // Server validates hacker who never had the password, unless it has safeguards to
         // prevent use of bad A value.

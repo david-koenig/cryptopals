@@ -31,7 +31,7 @@ srp_params * init_srp(const char * N, unsigned int g, unsigned int k);
 void register_user_server(srp_params * params,
                           const char * email,
                           const char * password,
-                          const byte_array * salt);
+                          const byte_array salt);
 
 // Client constructs handshake to begin login attempt. Allocates a
 // handshake object and a session object, both of which must be freed.
@@ -47,7 +47,7 @@ srp_server_handshake * receive_client_handshake(srp_server_session ** server,
                                                 const srp_client_handshake * handshake);
 
 // Client processes handshake and returns an HMAC of the shared secret.
-byte_array * calculate_client_hmac(srp_client_session * client,
+byte_array calculate_client_hmac(srp_client_session * client,
                                    const srp_params * params,
                                    const srp_server_handshake * handshake,
                                    const char * password);
@@ -57,7 +57,7 @@ byte_array * calculate_client_hmac(srp_client_session * client,
 // password and function returns false.
 bool validate_client_hmac(const srp_server_session * server,
                           const srp_params * params,
-                          const byte_array * client_hmac);
+                          const byte_array client_hmac);
 
 
 // The following functions are not part of the SRP protocol but are used by a
@@ -72,11 +72,11 @@ srp_client_handshake * forge_client_handshake(const char * A_hex,
                                               const char * email);
 
 // Nefarious client calculates an HMAC based direcly on shared secret value.
-byte_array * forge_hmac(const char * secret_hex, const byte_array * salt);
+byte_array forge_hmac(const char * secret_hex, const byte_array salt);
 
 // Get a constant pointer to the salt from the server handshake.
 // Does not copy byte array.
-const byte_array * get_salt_const_p(const srp_server_handshake * handshake);
+const byte_array get_salt_const_p(const srp_server_handshake * handshake);
 
 
 // The following functions are not part of SRP protocol but are used by a
@@ -84,14 +84,14 @@ const byte_array * get_salt_const_p(const srp_server_handshake * handshake);
 
 // MITM hacker provides a phony server handshake with B and salt of his choosing.
 srp_server_handshake * forge_server_handshake(unsigned int B,
-                                              const byte_array * salt);
+                                              const byte_array salt);
 
 // MITM hacker checks his guess of the password against client's HMAC.
 // This only works because hacker has fed client bad parameters to simplify
 // calculation of the HMAC. Returns true iff password guess is correct.
 bool hack_client_hmac(const srp_params * params,
                       const srp_client_handshake * handshake,
-                      const byte_array * client_hmac,
+                      const byte_array client_hmac,
                       const char * password_guess);
 
 void free_srp_params(srp_params * params);

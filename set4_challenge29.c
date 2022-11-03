@@ -19,15 +19,15 @@ int main(int argc, char ** argv) {
     init_random_mac_key(atoi(argv[1]));
 
     // We do have access to the key, but we do have access to these.
-    byte_array * message = cstring_to_bytes("comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon");
-    byte_array * mac = sha1_mac(message);
+    byte_array message = cstring_to_bytes("comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon");
+    byte_array mac = sha1_mac(message);
 
     // We cannot use sha1_mac ourselves, but we can use check_message_sha1_mac to verify that we have
     // successfully forged a new message and MAC pair.
     assert(check_message_sha1_mac(message, mac));
 
     // We want to forge a new message and MAC pair in which the message has this at the end.
-    byte_array * extension = cstring_to_bytes(";admin=true");
+    byte_array extension = cstring_to_bytes(";admin=true");
 
     /* Length extension attack
      *
@@ -45,34 +45,34 @@ int main(int argc, char ** argv) {
      * If len = byte length of (key || message) then the number of blocks = (len + 72) >> 6
      */
     uint64_t key_len_guess = 1;
-    uint64_t num_blocks_guess = (message->len + key_len_guess + 72) >> 6;
+    uint64_t num_blocks_guess = (message.len + key_len_guess + 72) >> 6;
     bool broke_the_mac = false;
 
     while(!broke_the_mac) {
         SHA1Context sha;
         // Sets up internal state of SHA1 context to the same as it would be after hashing
         // (key || message || padding) but with it still able to receive more data.
-        check_err(SHA1Reset_hack(&sha, num_blocks_guess, mac->bytes));
+        check_err(SHA1Reset_hack(&sha, num_blocks_guess, mac.bytes));
 
         // Adds the extension after the padding that was already applied.
-        check_err(SHA1Input(&sha, extension->bytes, extension->len));
+        check_err(SHA1Input(&sha, extension.bytes, extension.len));
 
         // Finalizes the digest of (key || message || padding || extension), which will include
         // a new layer of padding being applied to the end before hashing.
-        byte_array * counterfeit_mac = alloc_byte_array(20);
-        check_err(SHA1Result(&sha, counterfeit_mac->bytes));
+        byte_array counterfeit_mac = alloc_byte_array(20);
+        check_err(SHA1Result(&sha, counterfeit_mac.bytes));
 
         // We may have already calculated the correct counterfeit MAC, but we don't yet know
         // the value of the glue-padding, so we try different values.
         do {
-            byte_array * glue_padding = sha1_pad(key_len_guess + message->len);
-            byte_array * counterfeit_message = append_three_byte_arrays(message, glue_padding, extension);
+            byte_array glue_padding = sha1_pad(key_len_guess + message.len);
+            byte_array counterfeit_message = append_three_byte_arrays(message, glue_padding, extension);
             if (check_message_sha1_mac(counterfeit_message, counterfeit_mac)) {
                 broke_the_mac = true;
             }
             free_byte_array(glue_padding);
             free_byte_array(counterfeit_message);
-        } while(!(broke_the_mac || num_blocks_guess != (message->len + ++key_len_guess + 72) >> 6));
+        } while(!(broke_the_mac || num_blocks_guess != (message.len + ++key_len_guess + 72) >> 6));
 
         // If we are here and broke_the_mac is still false, it means none of the possible key
         // lengths at that number of blocks worked.

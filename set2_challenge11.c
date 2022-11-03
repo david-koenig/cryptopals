@@ -10,13 +10,13 @@ int main(int argc, char ** argv) {
     }
     init_random_encrypt(atoi(argv[1]));
 
-    byte_array * plain = alloc_byte_array(48);
+    byte_array plain = alloc_byte_array(48);
     set_all_bytes(plain, 'A');
 
-    byte_array * cipher = random_encrypt(plain);
+    byte_array cipher = random_encrypt(plain);
     const size_t block_size = 16;
     print_byte_array_blocks(cipher, block_size, '\n');
-    if (memcmp(cipher->bytes+block_size, cipher->bytes+(block_size << 1), block_size)) {
+    if (memcmp(cipher.bytes+block_size, cipher.bytes+(block_size << 1), block_size)) {
         printf("CBC mode!\n");
     } else {
         printf("ECB mode!\n");

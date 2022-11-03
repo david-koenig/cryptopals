@@ -8,86 +8,88 @@ typedef struct byte_array {
     size_t len;
 } byte_array;
 
+#define NO_BA (byte_array){NULL, -1ULL}
+
 // Allocate memory for a byte array. Be sure to run free_byte_array when finished
-byte_array * alloc_byte_array(size_t len);
+byte_array alloc_byte_array(size_t len);
 
 // Free memory for a byte array
-void free_byte_array(byte_array * x);
+void free_byte_array(byte_array x);
 
 // Print byte array in hex format
-void print_byte_array(const byte_array * x);
+void print_byte_array(const byte_array x);
 
 // Creates a new byte array with the ASCII hex representation of the bytes of original array.
 // New byte array will be null-terminated to allow tools reading C-strings to use it.
-byte_array * byte_array_to_hex_byte_array(const byte_array * x);
+byte_array byte_array_to_hex_byte_array(const byte_array x);
 
 // Print byte array in ASCII format
-void print_byte_array_ascii(const byte_array * x);
+void print_byte_array_ascii(const byte_array x);
 
 // Print byte array with blocks separated by separator character
-void print_byte_array_blocks(const byte_array * x, size_t block_size, char separator);
-void print_byte_array_ascii_blocks(const byte_array * x, size_t block_size, char separator);
+void print_byte_array_blocks(const byte_array x, size_t block_size, char separator);
+void print_byte_array_ascii_blocks(const byte_array x, size_t block_size, char separator);
 
 // Convert single hex character to integer value as byte
 uint8_t hex_char_to_byte(uint8_t hex_char);
 
 // Take in null-terminated string of hex characters and convert to byte array (allocates byte_array)
-byte_array * hex_to_bytes(const char * hex_str);
+byte_array hex_to_bytes(const char * hex_str);
 
 // Convert null-terminated string to byte array, not including the null byte (allocates byte_array)
-byte_array * cstring_to_bytes(const char * str);
+byte_array cstring_to_bytes(const char * str);
 
 // converts a byte array to base64 null-terminated string (allocates string)
-uint8_t * byte_array_to_base64(const byte_array * ba);
+uint8_t * byte_array_to_base64(const byte_array ba);
 
 // converts null-terminated hex string to null-terminated base64 string (allocates string)
 uint8_t * hex_to_base64(const char * hex_str);
 
 // converts null-terminated base64 string to byte array (allocates byte_array)
-byte_array * base64_to_bytes(const char * base64_str);
+byte_array base64_to_bytes(const char * base64_str);
 
 // copy subset of byte array to new array, start at index x (inclusive) end at index y (exclusive)
-byte_array * sub_byte_array(const byte_array * ba, size_t x, size_t y);
+byte_array sub_byte_array(const byte_array ba, size_t x, size_t y);
 
 // copy byte array to a new array
-byte_array * copy_byte_array(const byte_array * ba);
+byte_array copy_byte_array(const byte_array ba);
 
 // create new byte array which is concatenation of x and y
-byte_array * append_byte_arrays(const byte_array * x, const byte_array * y);
+byte_array append_byte_arrays(const byte_array x, const byte_array y);
 
 // create new byte array which is concatenation of x, y, and z
-byte_array * append_three_byte_arrays(const byte_array * x, const byte_array * y, const byte_array * z);
+byte_array append_three_byte_arrays(const byte_array x, const byte_array y, const byte_array z);
 
 // true if equal, false if not
-bool byte_arrays_equal(const byte_array * x, const byte_array * y);
+bool byte_arrays_equal(const byte_array x, const byte_array y);
 
 // Calculates XOR of byte array X and byte array Y and stores it in byte array Z,
-// or do "byte_array * z = xor_byte_arrays(NULL, x, y);" to allocate a new byte array.
+// or do "byte_array z = xor_byte_arrays(NO_BA, x, y);" to allocate a new byte array.
 // If x and y have different lengths, z will have the minimum of the two lengths.
-byte_array * xor_byte_arrays(byte_array * z, const byte_array * x, const byte_array * y);
+byte_array xor_byte_arrays(byte_array z, const byte_array x, const byte_array y);
 
 // XOR block_size worth of bytes from x and y and place result at z.
 // Does not do any bounds checking.
 void xor_block(uint8_t * z, const uint8_t * x, const uint8_t * y, size_t block_size);
 
 // Set all bytes of byte array to the value c
-void set_all_bytes(byte_array * ba, uint8_t c);
+void set_all_bytes(byte_array ba, uint8_t c);
 
 // Count 1 bits in a byte
 size_t pop_count_byte(uint8_t b);
 
 // Count 1 bits in a byte array
-size_t pop_count_byte_array(const byte_array * ba);
+size_t pop_count_byte_array(const byte_array ba);
 
 // Calculate hamming distance (number of differing bits) in two byte arrays
-size_t hamming_distance(const byte_array * x, const byte_array * y);
+size_t hamming_distance(const byte_array x, const byte_array y);
 
 // Read file with base64 string on multiple lines and convert to byte array (allocates byte_array)
-byte_array * base64_file_to_bytes(const char * filename);
+byte_array base64_file_to_bytes(const char * filename);
 
 // Read file with one base64 string per line. Allocate array of byte arrays, converting each line
 // to a byte array. Write at address provided in first argument number of byte arrays in array.
-byte_array ** base64_each_line_to_bytes(size_t * num_byte_arrays, const char * filename);
+byte_array* base64_each_line_to_bytes(size_t * num_byte_arrays, const char * filename);
 
 // Free array of byte arrays generated by base64_each_line_to_bytes
-void free_array_of_byte_arrays(byte_array ** ba_p, size_t num_byte_arrays);
+void free_array_of_byte_arrays(byte_array* ba_p, size_t num_byte_arrays);

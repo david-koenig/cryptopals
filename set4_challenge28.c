@@ -9,9 +9,9 @@ int main(int argc, char ** argv) {
     }
     init_random_mac_key(atoi(argv[1]));
 
-    byte_array * message = cstring_to_bytes("The quick brown fox jumps over the lazy dog.");
+    byte_array message = cstring_to_bytes("The quick brown fox jumps over the lazy dog.");
 
-    byte_array * mac = sha1_mac(message);
+    byte_array mac = sha1_mac(message);
     printf("Secret: ???\n");
     printf("Message: ");
     print_byte_array_ascii(message);

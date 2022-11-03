@@ -12,9 +12,9 @@ int main(int argc, char ** argv) {
     init_gmp(seed);
     rsa_params params = rsa_keygen(256);
 
-    byte_array * plain = cstring_to_bytes("Testing RSA encryption and decryption");
-    byte_array * cipher = rsa_encrypt(params.public, plain);
-    byte_array * decrypt = rsa_decrypt(params.private, cipher);
+    byte_array plain = cstring_to_bytes("Testing RSA encryption and decryption");
+    byte_array cipher = rsa_encrypt(params.public, plain);
+    byte_array decrypt = rsa_decrypt(params.private, cipher);
 
     printf("Plaintext: ");
     print_byte_array_ascii(plain);

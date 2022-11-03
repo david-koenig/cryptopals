@@ -52,21 +52,21 @@ uint32_t cryptopals::mt19937::temper(uint32_t x) {
     return x;
 }
 
-byte_array * cryptopals::mt19937_cipher::encrypt_decrypt(const byte_array * input) {
-    byte_array * output = alloc_byte_array(input->len);
+byte_array cryptopals::mt19937_cipher::encrypt_decrypt(const byte_array input) {
+    byte_array output = alloc_byte_array(input.len);
     cryptopals::mt19937 mt(seed);
-    for (size_t idx = 0 ; idx < input->len ; ++idx) {
+    for (size_t idx = 0 ; idx < input.len ; ++idx) {
         /* just using low byte of random output for each key stream byte */
-        output->bytes[idx] = (uint8_t) mt.rand();
+        output.bytes[idx] = (uint8_t) mt.rand();
     }
     xor_byte_arrays(output, output, input);
     return output;
 }
 
-byte_array * cryptopals::mt19937_cipher::encrypt(const byte_array * plain) {
+byte_array cryptopals::mt19937_cipher::encrypt(const byte_array plain) {
     return encrypt_decrypt(plain);
 }
 
-byte_array * cryptopals::mt19937_cipher::decrypt(const byte_array * cipher) {
+byte_array cryptopals::mt19937_cipher::decrypt(const byte_array cipher) {
     return encrypt_decrypt(cipher);
 }

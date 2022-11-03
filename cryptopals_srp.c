@@ -10,8 +10,8 @@
 // In real life, this would be a hash table indexed by emails (or other usernames)
 // storing (salt, v) pairs.
 typedef struct srp_server_private_storage {
-    byte_array * email;
-    byte_array * salt; // Server will hand this to client before verifying password.
+    byte_array email;
+    byte_array salt; // Server will hand this to client before verifying password.
     mpz_t v; // (g ** SHA256(salt|password)) mod N, i.e., the password hash
 } srp_server_private_storage;
 
@@ -41,19 +41,19 @@ srp_params * init_srp(const char * N_hex,
     mpz_init_set_ui(params->k, k);
     // Initialize but do not set.
     mpz_init(params->server.v);
-    // Setting to null makes free_byte_array safe if they don't get set.
-    params->server.email = NULL;
-    params->server.salt = NULL;
+    // Setting to NO_BA makes free_byte_array safe if they don't get set.
+    params->server.email = NO_BA;
+    params->server.salt = NO_BA;
     return params;
 }
 
 void register_user_server(srp_params * params,
                           const char * email,
                           const char * password,
-                          const byte_array * salt) {
+                          const byte_array salt) {
     const byte_array password_ba = {(uint8_t *)password, strlen(password)};
     // x = SHA256(salt|password)
-    byte_array * sha_out = sha256_2_byte_arrays(salt, &password_ba);
+    byte_array sha_out = sha256_2_byte_arrays(salt, password_ba);
     mpz_t x;
     byte_array_to_mpz_init(x, sha_out);
 
@@ -87,12 +87,12 @@ typedef struct srp_server_session {
 
 typedef struct srp_client_handshake {
     mpz_t A; // client's public key
-    byte_array * email;
+    byte_array email;
 } srp_client_handshake;
 
 typedef struct srp_server_handshake {
     mpz_t B; // server's public key
-    byte_array * salt;
+    byte_array salt;
 } srp_server_handshake;
 
 srp_client_handshake * construct_client_handshake(srp_client_session ** client,
@@ -171,7 +171,7 @@ srp_server_handshake * receive_client_handshake(srp_server_session ** server,
 }
 
 srp_server_handshake * forge_server_handshake(unsigned int B,
-                                              const byte_array * salt) {
+                                              const byte_array salt) {
     srp_server_handshake * handshake = malloc(sizeof(srp_server_handshake));
     mpz_init_set_ui(handshake->B, B);
     handshake->salt = copy_byte_array(salt);
@@ -191,16 +191,16 @@ void free_srp_server_handshake(srp_server_handshake * handshake) {
     free(handshake);
 }
 
-const byte_array * get_salt_const_p(const srp_server_handshake * handshake) {
-    return (const byte_array *)handshake->salt;
+const byte_array get_salt_const_p(const srp_server_handshake * handshake) {
+    return (const byte_array)handshake->salt;
 }
 
 // u = SHA256(A|B)
 static void calculate_u_init(mpz_t u, const mpz_t A, const mpz_t B) {
     mpz_init(u);
-    byte_array * A_bytes = mpz_to_byte_array(A);
-    byte_array * B_bytes = mpz_to_byte_array(B);
-    byte_array * u_bytes = sha256_2_byte_arrays(A_bytes, B_bytes);
+    byte_array A_bytes = mpz_to_byte_array(A);
+    byte_array B_bytes = mpz_to_byte_array(B);
+    byte_array u_bytes = sha256_2_byte_arrays(A_bytes, B_bytes);
     byte_array_to_mpz(u, u_bytes);
     free_byte_array(A_bytes);
     free_byte_array(B_bytes);
@@ -208,30 +208,30 @@ static void calculate_u_init(mpz_t u, const mpz_t A, const mpz_t B) {
 }
 
 // HMAC-SHA256(SHA256(S), salt)
-static byte_array * hmac_secret(const mpz_t secret, const byte_array * salt) {
-    byte_array * secret_ba = mpz_to_byte_array(secret);
-    byte_array * K = sha256_byte_array(secret_ba);
-    byte_array * hmac = hmac_sha256(K, salt);
+static byte_array hmac_secret(const mpz_t secret, const byte_array salt) {
+    byte_array secret_ba = mpz_to_byte_array(secret);
+    byte_array K = sha256_byte_array(secret_ba);
+    byte_array hmac = hmac_sha256(K, salt);
     free_byte_array(secret_ba);
     free_byte_array(K);
     return hmac;
 }
 
-byte_array * forge_hmac(const char * secret_hex, const byte_array * salt) {
+byte_array forge_hmac(const char * secret_hex, const byte_array salt) {
     mpz_t S;
     mpz_init_set_str(S, secret_hex, 16);
-    byte_array * hmac = hmac_secret(S, salt);
+    byte_array hmac = hmac_secret(S, salt);
     mpz_clear(S);
     return hmac;
 }
 
-byte_array * calculate_client_hmac(srp_client_session * client,
+byte_array calculate_client_hmac(srp_client_session * client,
                                    const srp_params * params,
                                    const srp_server_handshake * handshake,
                                    const char * password) {
     // x = SHA256(salt|password), same as server calculated and threw out
     const byte_array password_ba = {(uint8_t *)password, strlen(password)};
-    byte_array * sha_out = sha256_2_byte_arrays(handshake->salt, &password_ba);
+    byte_array sha_out = sha256_2_byte_arrays(handshake->salt, password_ba);
     mpz_t x;
     byte_array_to_mpz_init(x, sha_out);
 
@@ -265,18 +265,18 @@ byte_array * calculate_client_hmac(srp_client_session * client,
     mpz_clear(base);
     free_byte_array(sha_out);
 
-    byte_array * hmac = hmac_secret(S, handshake->salt);
+    byte_array hmac = hmac_secret(S, handshake->salt);
     mpz_clear(S);
     return hmac;
 }
 
 bool hack_client_hmac(const srp_params * params,
                       const srp_client_handshake * handshake, // for A
-                      const byte_array * client_hmac,
+                      const byte_array client_hmac,
                       const char * password_guess) {
     // x = SHA256(password)
     const byte_array password_ba = {(uint8_t *)password_guess, strlen(password_guess)};
-    byte_array * sha_pw = sha256_byte_array(&password_ba);
+    byte_array sha_pw = sha256_byte_array(password_ba);
 
     mpz_t x;
     byte_array_to_mpz_init(x, sha_pw);
@@ -298,7 +298,7 @@ bool hack_client_hmac(const srp_params * params,
     mpz_mod(S, S, params->N);
 
     const byte_array empty = {"", 0};
-    byte_array * hmac_guess = hmac_secret(S, &empty);
+    byte_array hmac_guess = hmac_secret(S, empty);
     bool ret = byte_arrays_equal(client_hmac, hmac_guess);
 
     mpz_clear(x);
@@ -333,13 +333,13 @@ static void calculate_server_shared_secret_init(mpz_t S,
 
 bool validate_client_hmac(const srp_server_session * server,
                           const srp_params * params,
-                          const byte_array * client_hmac) {
+                          const byte_array client_hmac) {
     // Cryptographic shared secret generated by both client and server
     mpz_t S;
 
     calculate_server_shared_secret_init(S, server, params);
 
-    byte_array * server_hmac = hmac_secret(S, params->server.salt);
+    byte_array server_hmac = hmac_secret(S, params->server.salt);
     bool ret = byte_arrays_equal(client_hmac, server_hmac);
     free_byte_array(server_hmac);
     mpz_clear(S);

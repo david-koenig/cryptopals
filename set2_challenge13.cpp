@@ -59,7 +59,7 @@ int main(int argc, char ** argv) {
 
     std::cout << "First pick an email address to get the role name all by itself in the last block" << std::endl;
     std::string emailA("admin@bar.com");
-    byte_array * cipherA = generate_encrypted_profile(emailA);
+    byte_array cipherA = generate_encrypted_profile(emailA);
 
     print_profile(printable_profile(emailA), 'A');
     print_byte_array_blocks(cipherA, BLOCK_SIZE, ' ');
@@ -76,16 +76,16 @@ int main(int argc, char ** argv) {
     char c = 0x0b;
     emailB.append(11, c);
     emailB_printable.append(11, 'P');
-    byte_array * cipherB = generate_encrypted_profile(emailB);
+    byte_array cipherB = generate_encrypted_profile(emailB);
 
     print_profile(printable_profile(emailB_printable), 'B');
     print_byte_array_blocks(cipherB, BLOCK_SIZE, ' ');
 
     std::cout << std::endl << "Constructing frankenstein cipher..." << std::endl;
     
-    byte_array * cipherC = alloc_byte_array(3 * BLOCK_SIZE);
-    memcpy(cipherC->bytes, cipherA->bytes, 2 * BLOCK_SIZE);
-    memcpy(cipherC->bytes + 2*BLOCK_SIZE, cipherB->bytes + BLOCK_SIZE, BLOCK_SIZE);
+    byte_array cipherC = alloc_byte_array(3 * BLOCK_SIZE);
+    memcpy(cipherC.bytes, cipherA.bytes, 2 * BLOCK_SIZE);
+    memcpy(cipherC.bytes + 2*BLOCK_SIZE, cipherB.bytes + BLOCK_SIZE, BLOCK_SIZE);
     
     print_profile(printable_profile(emailA), 'A', 0, false);
     print_profile(printable_profile(emailA), 'A', 1, false);

@@ -19,7 +19,7 @@ int main(int argc, char ** argv) {
         }
     }
 
-    byte_array * cipher;
+    byte_array cipher;
     const size_t num_As = 14; // far more bits of check than we need
 
     {
@@ -27,10 +27,10 @@ int main(int argc, char ** argv) {
         cryptopals::mt19937_cipher mtc(seed);
         seed = 0;
 
-        byte_array * junk = random_byte_array();
-        byte_array * plain = alloc_byte_array(num_As);
+        byte_array junk = random_byte_array();
+        byte_array plain = alloc_byte_array(num_As);
         set_all_bytes(plain, 'A');
-        byte_array * input = append_byte_arrays(junk, plain);
+        byte_array input = append_byte_arrays(junk, plain);
         cipher = mtc.encrypt(input);
 
         free_byte_array(junk);
@@ -47,7 +47,7 @@ int main(int argc, char ** argv) {
      * could have made the block above a separate function.
      */
 
-    size_t junk_len = cipher->len - num_As;
+    size_t junk_len = cipher.len - num_As;
     cryptopals::mt19937 mt(seed);
     bool seed_recovered = false;
 
@@ -61,10 +61,10 @@ int main(int argc, char ** argv) {
          * among the 2^16 seed values we are exhausting. Note that if we were searching a larger seed space,
          * we would need more bits of check.
          */
-        while (idx < cipher->len && ((uint8_t) mt.rand() ^ cipher->bytes[idx]) == 'A') {
+        while (idx < cipher.len && ((uint8_t) mt.rand() ^ cipher.bytes[idx]) == 'A') {
             ++idx;
         }
-        if (idx == cipher->len) {
+        if (idx == cipher.len) {
             seed_recovered = true;
         } else {
             mt.srand(++seed);

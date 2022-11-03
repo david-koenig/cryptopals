@@ -12,10 +12,10 @@ int main(int argc, char ** argv) {
     }
     unsigned int seed =	atoi(argv[1]);
     init_gmp(seed);
-    byte_array * plain = cstring_to_bytes(desc);
+    byte_array plain = cstring_to_bytes(desc);
 
     const rsa_public_key * public[3];
-    const byte_array * cipher[3];
+    byte_array cipher[3];
     
     for (int idx = 0 ; idx < 3 ; idx++) {
         // This doesn't check that the generated moduli are pairwise coprime.
@@ -27,7 +27,7 @@ int main(int argc, char ** argv) {
         cipher[idx] = rsa_encrypt(params.public, plain);
     }
     
-    byte_array * cracked_plain = rsa_broadcast_attack(public, cipher);
+    byte_array cracked_plain = rsa_broadcast_attack(public, cipher);
     printf("Plaintext: ");
     print_byte_array_ascii(plain);
     printf("Cracked! : ");
@@ -36,7 +36,7 @@ int main(int argc, char ** argv) {
     
     for (int idx = 0; idx < 3 ; idx++) {
         free_rsa_public_key(public[idx]);
-        free_byte_array((byte_array *)cipher[idx]);
+        free_byte_array((byte_array)cipher[idx]);
     }
     free_byte_array(cracked_plain);
     free_byte_array(plain);

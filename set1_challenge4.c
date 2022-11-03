@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
         char * c = strchr(line, '\n');
         if (c) *c = '\0';
 
-        byte_array * cipher = hex_to_bytes(line);
+        byte_array cipher = hex_to_bytes(line);
         score_single_byte_xor(cipher, true);
         free_byte_array(cipher);
     }

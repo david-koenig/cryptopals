@@ -3,41 +3,40 @@
 #include <string.h>
 #include "cryptopals_utils.h"
 
-byte_array * alloc_byte_array(size_t len) {
-    byte_array * ba = malloc(sizeof(byte_array));
-    ba->len = len;
-    ba->bytes = calloc(len, sizeof(uint8_t));
+byte_array alloc_byte_array(size_t len) {
+    byte_array ba;
+    ba.len = len;
+    ba.bytes = calloc(len, sizeof(uint8_t));
     return ba;
 }
 
-void free_byte_array(byte_array * x) {
-    if (x != NULL) {
-        free(x->bytes);
-        free(x);
+void free_byte_array(byte_array x) {
+    if (x.bytes != NULL) {
+        free(x.bytes);
     }
 }
 
-void print_byte_array(const byte_array * x) {
+void print_byte_array(const byte_array x) {
     size_t idx;
-    for (idx = 0 ; idx < x->len ; idx++) {
-        printf("%02hhx", x->bytes[idx]);
+    for (idx = 0 ; idx < x.len ; idx++) {
+        printf("%02hhx", x.bytes[idx]);
     }
     printf("\n");
 }
 
-byte_array * byte_array_to_hex_byte_array(const byte_array * x) {
-    byte_array * out = alloc_byte_array(1 + x->len * 2);
+byte_array byte_array_to_hex_byte_array(const byte_array x) {
+    byte_array out = alloc_byte_array(1 + x.len * 2);
     size_t idx;
-    for (idx = 0 ; idx < x->len ; idx++) {
-        sprintf((char *) out->bytes + 2*idx, "%02hhx", x->bytes[idx]);
+    for (idx = 0 ; idx < x.len ; idx++) {
+        sprintf((char *) out.bytes + 2*idx, "%02hhx", x.bytes[idx]);
     }
     return out;
 }
 
-void print_byte_array_blocks(const byte_array * x, size_t block_size, char separator) {
+void print_byte_array_blocks(const byte_array x, size_t block_size, char separator) {
     size_t idx;
-    for (idx = 0 ; idx < x->len ; idx++) {
-        printf("%02hhx", x->bytes[idx]);
+    for (idx = 0 ; idx < x.len ; idx++) {
+        printf("%02hhx", x.bytes[idx]);
         if (idx % block_size == block_size - 1) {
             printf("%c", separator);
         }
@@ -45,18 +44,18 @@ void print_byte_array_blocks(const byte_array * x, size_t block_size, char separ
     printf("\n");
 }
 
-void print_byte_array_ascii(const byte_array * x) {
+void print_byte_array_ascii(const byte_array x) {
     size_t idx;
-    for (idx = 0; idx < x->len ; idx++) {
-        printf("%c", x->bytes[idx]);
+    for (idx = 0; idx < x.len ; idx++) {
+        printf("%c", x.bytes[idx]);
     }
     printf("\n");
 }
 
-void print_byte_array_ascii_blocks(const byte_array * x, size_t block_size, char separator) {
+void print_byte_array_ascii_blocks(const byte_array x, size_t block_size, char separator) {
     size_t idx;
-    for (idx = 0 ; idx < x->len ; idx++) {
-        printf("%c", x->bytes[idx]);
+    for (idx = 0 ; idx < x.len ; idx++) {
+        printf("%c", x.bytes[idx]);
         if (idx % block_size == block_size - 1) {
             printf("%c", separator);
         }
@@ -75,24 +74,24 @@ uint8_t hex_char_to_byte(uint8_t hex_char) {
     exit(-1);
 }
 
-byte_array * hex_to_bytes(const char * hex_str) {
+byte_array hex_to_bytes(const char * hex_str) {
     size_t len = strlen(hex_str);
     size_t idx;
-    byte_array * ba = alloc_byte_array((len+1)/2);
+    byte_array ba = alloc_byte_array((len+1)/2);
     uint8_t byte;
 
     size_t offset = len&1;
     for (idx = 0 ; idx < len ; idx++) {
         byte = hex_char_to_byte(hex_str[idx]);
-        ba->bytes[(idx+offset)/2] += byte << ((1^offset^(idx&1))<<2); // shifts either 0 or 4 bits if odd or even
+        ba.bytes[(idx+offset)/2] += byte << ((1^offset^(idx&1))<<2); // shifts either 0 or 4 bits if odd or even
     }
     return ba;
 }
 
-byte_array * cstring_to_bytes(const char * str) {
+byte_array cstring_to_bytes(const char * str) {
     size_t len = strlen(str);
-    byte_array * ba = alloc_byte_array(len);
-    memcpy(ba->bytes, str, len); // strcpy copies the null byte, which we don't want here
+    byte_array ba = alloc_byte_array(len);
+    memcpy(ba.bytes, str, len); // strcpy copies the null byte, which we don't want here
     return ba;
 }
 
@@ -110,22 +109,22 @@ uint8_t * three_bytes_to_base64(uint8_t * base64_ptr, uint8_t b0, uint8_t b1, ui
     return base64_ptr;
 }
 
-uint8_t * byte_array_to_base64(const byte_array * ba) {
-    size_t num_24_bit_blocks = (ba->len) / 3;
-    size_t leftover_bytes = (ba->len) % 3;
-    size_t base64_str_sz = (((ba->len + 2) / 3) << 2) + 1; // 4 characters for each 3 byte chunk and null byte
+uint8_t * byte_array_to_base64(const byte_array ba) {
+    size_t num_24_bit_blocks = (ba.len) / 3;
+    size_t leftover_bytes = (ba.len) % 3;
+    size_t base64_str_sz = (((ba.len + 2) / 3) << 2) + 1; // 4 characters for each 3 byte chunk and null byte
     uint8_t * base64_str = calloc(base64_str_sz, sizeof(uint8_t));
     uint8_t * base64_ptr = base64_str;
     size_t idx;
 
     for (idx = 0 ; idx < num_24_bit_blocks ; idx++) {
-        base64_ptr = three_bytes_to_base64(base64_ptr, ba->bytes[3 * idx], ba->bytes[3 * idx + 1], ba->bytes[3 * idx + 2]);
+        base64_ptr = three_bytes_to_base64(base64_ptr, ba.bytes[3 * idx], ba.bytes[3 * idx + 1], ba.bytes[3 * idx + 2]);
     }
     if (leftover_bytes == 2) {
-        base64_ptr = three_bytes_to_base64(base64_ptr, ba->bytes[3 * num_24_bit_blocks], ba->bytes[3 * num_24_bit_blocks + 1], 0);
+        base64_ptr = three_bytes_to_base64(base64_ptr, ba.bytes[3 * num_24_bit_blocks], ba.bytes[3 * num_24_bit_blocks + 1], 0);
         base64_ptr[-1] = '=';
     } else if (leftover_bytes == 1) {
-        base64_ptr = three_bytes_to_base64(base64_ptr, ba->bytes[3 * num_24_bit_blocks], 0, 0);
+        base64_ptr = three_bytes_to_base64(base64_ptr, ba.bytes[3 * num_24_bit_blocks], 0, 0);
         base64_ptr[-1] = '=';
         base64_ptr[-2] = '=';
     }
@@ -133,7 +132,7 @@ uint8_t * byte_array_to_base64(const byte_array * ba) {
 }
 
 uint8_t * hex_to_base64(const char * hex_str) {
-    byte_array * ba = hex_to_bytes(hex_str);
+    byte_array ba = hex_to_bytes(hex_str);
     uint8_t * base64_str = byte_array_to_base64(ba);
     free_byte_array(ba);
     return base64_str;
@@ -168,7 +167,7 @@ void four_base64_chars_to_three_bytes(uint8_t * bytes, const char * base64_ptr) 
     bytes[2] += base64_char_to_byte(*base64_ptr++);
 }
 
-byte_array * base64_to_bytes(const char * base64_str) {
+byte_array base64_to_bytes(const char * base64_str) {
     size_t base64_len = strlen(base64_str);
     if (base64_len % 4) {
         fprintf(stderr, "%s: string length not multiple of 4\n", __func__);
@@ -181,10 +180,10 @@ byte_array * base64_to_bytes(const char * base64_str) {
             --byte_len;
         }
     }
-    byte_array * ba = alloc_byte_array(byte_len);
+    byte_array ba = alloc_byte_array(byte_len);
     const char * base64_ptr = base64_str;
-    uint8_t * byte_ptr = ba->bytes;
-    for ( ; byte_ptr < ba->bytes + byte_len - 2 ; base64_ptr += 4, byte_ptr += 3) {
+    uint8_t * byte_ptr = ba.bytes;
+    for ( ; byte_ptr < ba.bytes + byte_len - 2 ; base64_ptr += 4, byte_ptr += 3) {
         four_base64_chars_to_three_bytes(byte_ptr, base64_ptr);
     }
     if (byte_len % 3) {
@@ -198,51 +197,51 @@ byte_array * base64_to_bytes(const char * base64_str) {
     return ba;
 }
 
-byte_array * sub_byte_array(const byte_array * ba, size_t x, size_t y) {
+byte_array sub_byte_array(const byte_array ba, size_t x, size_t y) {
     if (x > y) {
         fprintf(stderr, "%s: starting index %li > ending index %li\n", __func__, x, y);
         exit(1);
     }
-    if (y > ba->len) {
-        fprintf(stderr, "%s: ending index %li > byte array len %li\n", __func__, y, ba->len); 
+    if (y > ba.len) {
+        fprintf(stderr, "%s: ending index %li > byte array len %li\n", __func__, y, ba.len); 
     }
-    byte_array * sub_ba = alloc_byte_array(y - x);
-    memcpy(sub_ba->bytes, ba->bytes + x, y - x);
+    byte_array sub_ba = alloc_byte_array(y - x);
+    memcpy(sub_ba.bytes, ba.bytes + x, y - x);
     return sub_ba;
 }
 
-byte_array * copy_byte_array(const byte_array * ba) {
-    return sub_byte_array(ba, 0, ba->len);
+byte_array copy_byte_array(const byte_array ba) {
+    return sub_byte_array(ba, 0, ba.len);
 }
 
-byte_array * append_byte_arrays(const byte_array * x, const byte_array * y) {
-    byte_array * ba = alloc_byte_array(x->len + y->len);
-    memcpy(ba->bytes, x->bytes, x->len);
-    memcpy(ba->bytes + x->len, y->bytes, y->len);
+byte_array append_byte_arrays(const byte_array x, const byte_array y) {
+    byte_array ba = alloc_byte_array(x.len + y.len);
+    memcpy(ba.bytes, x.bytes, x.len);
+    memcpy(ba.bytes + x.len, y.bytes, y.len);
     return ba;
 }
 
-byte_array * append_three_byte_arrays(const byte_array * x, const byte_array * y, const byte_array * z) {
-    byte_array * ba = alloc_byte_array(x->len + y->len + z->len);
-    memcpy(ba->bytes, x->bytes, x->len);
-    memcpy(ba->bytes + x->len, y->bytes, y->len);
-    memcpy(ba->bytes + x->len + y->len, z->bytes, z->len);
+byte_array append_three_byte_arrays(const byte_array x, const byte_array y, const byte_array z) {
+    byte_array ba = alloc_byte_array(x.len + y.len + z.len);
+    memcpy(ba.bytes, x.bytes, x.len);
+    memcpy(ba.bytes + x.len, y.bytes, y.len);
+    memcpy(ba.bytes + x.len + y.len, z.bytes, z.len);
     return ba;
 }
 
-bool byte_arrays_equal(const byte_array * x, const byte_array * y) {
-    return x->len == y->len && !memcmp(x->bytes, y->bytes, x->len);
+bool byte_arrays_equal(const byte_array x, const byte_array y) {
+    return x.len == y.len && !memcmp(x.bytes, y.bytes, x.len);
 }
 
-byte_array * xor_byte_arrays(byte_array * z, const byte_array * x, const byte_array * y) {
+byte_array xor_byte_arrays(byte_array z, const byte_array x, const byte_array y) {
     size_t idx;
-    size_t len = x->len <= y->len ? x->len : y->len;
+    size_t len = x.len <= y.len ? x.len : y.len;
 
-    if (z == NULL) {
+    if (z.bytes == NULL) {
         z = alloc_byte_array(len);
     }
     for (idx = 0; idx < len ; idx++) {
-        z->bytes[idx] = x->bytes[idx] ^ y->bytes[idx];
+        z.bytes[idx] = x.bytes[idx] ^ y.bytes[idx];
     }
     return z;
 }
@@ -254,8 +253,8 @@ void xor_block(uint8_t * z, const uint8_t * x, const uint8_t * y, size_t block_s
     }
 }
 
-void set_all_bytes(byte_array * ba, uint8_t c) {
-    memset(ba->bytes, c, ba->len);
+void set_all_bytes(byte_array ba, uint8_t c) {
+    memset(ba.bytes, c, ba.len);
 }
 
 size_t pop_count_byte(uint8_t b) {
@@ -265,23 +264,23 @@ size_t pop_count_byte(uint8_t b) {
     return b;
 }
 
-size_t pop_count_byte_array(const byte_array * ba) {
+size_t pop_count_byte_array(const byte_array ba) {
     size_t idx;
     size_t bits = 0;
-    for (idx = 0 ; idx < ba->len ; idx++) {
-        bits += pop_count_byte(ba->bytes[idx]);
+    for (idx = 0 ; idx < ba.len ; idx++) {
+        bits += pop_count_byte(ba.bytes[idx]);
     }
     return bits;
 }
 
-size_t hamming_distance(const byte_array * x, const byte_array * y) {
-    byte_array * z = xor_byte_arrays(NULL, x, y);
+size_t hamming_distance(const byte_array x, const byte_array y) {
+    byte_array z = xor_byte_arrays(NO_BA, x, y);
     size_t bits = pop_count_byte_array(z);
     free_byte_array(z);
     return bits;
 }
 
-byte_array * base64_file_to_bytes(const char * filename) {
+byte_array base64_file_to_bytes(const char * filename) {
     /*
      * Currently assumes each line is valid base64.
      * TODO: concatenate all lines into one string first,
@@ -295,14 +294,14 @@ byte_array * base64_file_to_bytes(const char * filename) {
     }
     char line[256] = "";
 
-    byte_array * ba = alloc_byte_array(0);
-    byte_array * old_ba;
+    byte_array ba = alloc_byte_array(0);
+    byte_array old_ba;
 
     while (fgets(line, 256, f)) {
         char * c = strchr(line, '\n');
         if (c) *c = '\0';
 
-        byte_array * ba_line = base64_to_bytes(line);
+        byte_array ba_line = base64_to_bytes(line);
 
         old_ba = ba;
         ba = append_byte_arrays(old_ba, ba_line);
@@ -313,7 +312,7 @@ byte_array * base64_file_to_bytes(const char * filename) {
     return ba;
 }
 
-byte_array ** base64_each_line_to_bytes(size_t * num_byte_arrays, const char * filename) {
+byte_array* base64_each_line_to_bytes(size_t * num_byte_arrays, const char * filename) {
     FILE * f = fopen(filename, "r");
     if (f == NULL) {
         fprintf(stderr, "%s: error reading file %s\n", __func__, filename);
@@ -325,7 +324,7 @@ byte_array ** base64_each_line_to_bytes(size_t * num_byte_arrays, const char * f
         ++line_num;
     }
     rewind(f);
-    byte_array ** ba_p = malloc(line_num * sizeof(byte_array *));
+    byte_array* ba_p = malloc(line_num * sizeof(byte_array));
     line_num = 0;
     while (fgets(line, 256, f)) {
         char * c = strchr(line, '\n');
@@ -337,7 +336,7 @@ byte_array ** base64_each_line_to_bytes(size_t * num_byte_arrays, const char * f
     return ba_p;
 }
 
-void free_array_of_byte_arrays(byte_array ** ba_p, size_t num_byte_arrays) {
+void free_array_of_byte_arrays(byte_array* ba_p, size_t num_byte_arrays) {
     size_t idx;
     for (idx = 0 ; idx < num_byte_arrays ; ++idx) {
         free_byte_array(ba_p[idx]);

@@ -33,17 +33,17 @@ int main(int argc, char ** argv) {
     handshake2(initiator_params, responder_params.public);
 
     // initiator sends a message to responder
-    byte_array * message = cstring_to_bytes("Sending out an SOS. Message in a bottle.");
-    byte_array * initiator_key = derive_key(get_shared_secret_bytes(initiator_params));
-    byte_array * encryption = encrypt_aes_128_cbc_prepend_iv(message, initiator_key);
+    byte_array message = cstring_to_bytes("Sending out an SOS. Message in a bottle.");
+    byte_array initiator_key = derive_key(get_shared_secret_bytes(initiator_params));
+    byte_array encryption = encrypt_aes_128_cbc_prepend_iv(message, initiator_key);
 
     // responder decrypts message then echoes it back, encrypted with its own IV
-    byte_array * responder_key = derive_key(get_shared_secret_bytes(responder_params));
-    byte_array * decryption = decrypt_aes_128_cbc_prepend_iv(encryption, responder_key);
-    byte_array * reencryption = encrypt_aes_128_cbc_prepend_iv(decryption, responder_key);
+    byte_array responder_key = derive_key(get_shared_secret_bytes(responder_params));
+    byte_array decryption = decrypt_aes_128_cbc_prepend_iv(encryption, responder_key);
+    byte_array reencryption = encrypt_aes_128_cbc_prepend_iv(decryption, responder_key);
 
     // initiator decrypts message from responder and prints out both original message and response
-    byte_array * redecryption = decrypt_aes_128_cbc_prepend_iv(reencryption, initiator_key);
+    byte_array redecryption = decrypt_aes_128_cbc_prepend_iv(reencryption, initiator_key);
     printf("Sent     : ");
     print_byte_array_ascii(message);
     printf("Received : ");

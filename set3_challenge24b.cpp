@@ -13,13 +13,13 @@ public:
 
     // Assuming that plaintext token is 16 uppercase hex characters.
     // Use time_offset for generating tokens from different time.
-    byte_array * generate(int32_t time_offset = 0) {
+    byte_array generate(int32_t time_offset = 0) {
         char buf[17] = ""; // 16 + 1 for null byte
         sprintf(buf, "%08X%08X", byte_gen.rand(), byte_gen.rand());
-        byte_array * plaintext_token = cstring_to_bytes(buf);
+        byte_array plaintext_token = cstring_to_bytes(buf);
 
         cryptopals::mt19937_cipher mtc(time(NULL) - time_offset);
-        byte_array * encrypted_token = mtc.encrypt(plaintext_token);
+        byte_array encrypted_token = mtc.encrypt(plaintext_token);
         free_byte_array(plaintext_token);
         return encrypted_token;
     }
@@ -33,17 +33,17 @@ bool is_hex_char(uint8_t byte) {
  * Returns true if valid, false if not. If valid and seed_p is not NULL, also writes
  * value of seed there.
  */
-bool crack_time_token(uint32_t * seed_p, const byte_array * token, uint32_t seconds_ago = 300) {
+bool crack_time_token(uint32_t * seed_p, const byte_array token, uint32_t seconds_ago = 300) {
     time_t now = time(NULL);
     uint32_t seed_guess = now - seconds_ago;
     cryptopals::mt19937 mt(seed_guess);
 
     while (seed_guess <= now) {
         size_t idx = 0;
-        while (idx < token->len && is_hex_char((uint8_t) mt.rand() ^ token->bytes[idx])) {
+        while (idx < token.len && is_hex_char((uint8_t) mt.rand() ^ token.bytes[idx])) {
             ++idx;
         }
-        if (idx == token->len) {
+        if (idx == token.len) {
             if (seed_p) {
                 *seed_p = seed_guess;
             }
@@ -76,7 +76,7 @@ int main(int argc, char ** argv) {
     token_generator t_gen(token_seed);
 
     for (int token_idx = 0 ; token_idx < num_tokens ; ++token_idx) {
-        byte_array * token = t_gen.generate(time_offsets[token_idx]);
+        byte_array token = t_gen.generate(time_offsets[token_idx]);
 
         uint32_t recovered_seed;
         if (crack_time_token(&recovered_seed, token)) {

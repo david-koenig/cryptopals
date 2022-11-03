@@ -37,7 +37,7 @@ int main(int argc, char ** argv) {
     const unsigned int k = 0;
     srp_params * params = init_srp(modulus, g, k);
 
-    byte_array * salt = random_128_bits();
+    byte_array salt = random_128_bits();
     register_user_server(params, email, password, salt);
 
 
@@ -51,11 +51,11 @@ int main(int argc, char ** argv) {
     // Hacker constructs server handshake, using salt = "" and B=g (implying b=1)
     const byte_array empty = {"", 0};
     srp_server_handshake * forged_server_handshake =
-        forge_server_handshake(g, &empty);
+        forge_server_handshake(g, empty);
     
     // Client receives handshake from hacker and passes back HMAC =
     // HMAC_SHA256(SHA256(A * (g ** SHA256(password))**SHA256(A|g) mod N))
-    byte_array * hmac =
+    byte_array hmac =
         calculate_client_hmac(client, params, forged_server_handshake, password);
 
     // Hacker has an HMAC which contains unsalted SHA256(password). In practice,
@@ -102,6 +102,7 @@ int main(int argc, char ** argv) {
         printf("Password not found in dictionary.\n");
     }
     
+    fclose(dictionary_fp);
     free(line);
     
     free_srp_params(params);

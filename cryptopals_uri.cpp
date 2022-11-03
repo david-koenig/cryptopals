@@ -29,44 +29,44 @@ std::string uri_decode(std::string s) {
     return s;
 }
 
-byte_array * uri_encrypt(std::string & userdata, byte_array * (*enc)(const byte_array *)) {
+byte_array uri_encrypt(std::string & userdata, byte_array (*enc)(const byte_array)) {
     std::string s = uri_encode(userdata);
     s.insert(0, "comment1=cooking%20MCs;userdata=");
     s += ";comment2=%20like%20a%20pound%20of%20bacon";
-    byte_array * plain = cstring_to_bytes(s.c_str());
-    byte_array * cipher = enc(plain);
+    byte_array plain = cstring_to_bytes(s.c_str());
+    byte_array cipher = enc(plain);
     free_byte_array(plain);
     return cipher;
 }
 
-bool uri_decrypt(byte_array * cipher, byte_array * (*dec)(const byte_array *)) {
-    byte_array * plain = dec(cipher);
+bool uri_decrypt(byte_array cipher, byte_array (*dec)(const byte_array)) {
+    byte_array plain = dec(cipher);
     print_byte_array_ascii_blocks(plain, 16, ' ');
     std::string s = bytes_to_string(plain);
     free_byte_array(plain);
     return std::string::npos != s.find(";admin=true;");
 }
 
-byte_array * uri_encrypt_cbc(std::string & userdata) {
+byte_array uri_encrypt_cbc(std::string & userdata) {
     return uri_encrypt(userdata, encrypt_cbc_mystery_key);
 }
 
-bool uri_decrypt_cbc(byte_array * cipher) {
+bool uri_decrypt_cbc(byte_array cipher) {
     return uri_decrypt(cipher, decrypt_cbc_mystery_key);
 }
 
-byte_array * uri_encrypt_cbc_matching_iv(std::string & userdata) {
+byte_array uri_encrypt_cbc_matching_iv(std::string & userdata) {
     return uri_encrypt(userdata, encrypt_cbc_mystery_key_matching_iv);
 }
 
-byte_array * uri_decrypt_cbc_matching_iv(byte_array * cipher) {
+byte_array uri_decrypt_cbc_matching_iv(byte_array cipher) {
     return decrypt_cbc_mystery_key_matching_iv(cipher);
 }
 
-byte_array * uri_encrypt_ctr(std::string & userdata) {
+byte_array uri_encrypt_ctr(std::string & userdata) {
     return uri_encrypt(userdata, encrypt_ctr_mystery_key);
 }
 
-bool uri_decrypt_ctr(byte_array * cipher) {
+bool uri_decrypt_ctr(byte_array cipher) {
     return uri_decrypt(cipher, decrypt_ctr_mystery_key);
 }

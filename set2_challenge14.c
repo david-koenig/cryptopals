@@ -4,16 +4,16 @@
 #include <stdio.h>
 #include <string.h>
 
-bool find_repeated_block(size_t * matching_block_idx_p, size_t * unused_len_p, size_t block_size, byte_array * (*encrypt)(const byte_array *)) {
+bool find_repeated_block(size_t * matching_block_idx_p, size_t * unused_len_p, size_t block_size, byte_array (*encrypt)(const byte_array)) {
     size_t plain_len;
     size_t matching_block_idx;
 
     for (plain_len = block_size << 1 ; ; ++plain_len) {
-        byte_array * plain = alloc_byte_array(plain_len);
+        byte_array plain = alloc_byte_array(plain_len);
         set_all_bytes(plain, 'A');
-        byte_array * cipher = encrypt(plain);
-        for (matching_block_idx = 0 ; matching_block_idx < cipher->len / block_size - 1 ; ++matching_block_idx) {
-            if (!memcmp(cipher->bytes + block_size * matching_block_idx, cipher->bytes + block_size * (matching_block_idx + 1), block_size)) {
+        byte_array cipher = encrypt(plain);
+        for (matching_block_idx = 0 ; matching_block_idx < cipher.len / block_size - 1 ; ++matching_block_idx) {
+            if (!memcmp(cipher.bytes + block_size * matching_block_idx, cipher.bytes + block_size * (matching_block_idx + 1), block_size)) {
                 printf("%s: First encryption with matching blocks: input len: %li, first matching block: %li\n", __func__, plain_len, matching_block_idx);
                 free_byte_array(plain);
                 free_byte_array(cipher);

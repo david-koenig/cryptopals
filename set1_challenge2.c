@@ -6,9 +6,9 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Usage: %s x y\nOutputs x ^ y\n", argv[0]);
         return 1;
     }
-    byte_array * x = hex_to_bytes(argv[1]);
-    byte_array * y = hex_to_bytes(argv[2]);
-    byte_array * z = xor_byte_arrays(NULL, x, y);
+    byte_array x = hex_to_bytes(argv[1]);
+    byte_array y = hex_to_bytes(argv[2]);
+    byte_array z = xor_byte_arrays(NO_BA, x, y);
     print_byte_array(z);
 
     free_byte_array(x);

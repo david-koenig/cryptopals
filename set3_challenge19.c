@@ -4,12 +4,12 @@
 #include <ctype.h>
 
 /* Print all of the plaintext guess byte arrays, using '*' in place of null bytes for readability. */
-void print_guesses(byte_array ** guesses, size_t num_plaintexts) {
+void print_guesses(byte_array* guesses, size_t num_plaintexts) {
     size_t guess_idx, ba_idx;
     for (guess_idx = 0 ; guess_idx < num_plaintexts ; ++guess_idx) {
         printf("%2li: ", guess_idx);
-        for (ba_idx = 0 ; ba_idx < guesses[guess_idx]->len ; ++ba_idx) {
-            printf("%c", guesses[guess_idx]->bytes[ba_idx] ? guesses[guess_idx]->bytes[ba_idx] : '*');
+        for (ba_idx = 0 ; ba_idx < guesses[guess_idx].len ; ++ba_idx) {
+            printf("%c", guesses[guess_idx].bytes[ba_idx] ? guesses[guess_idx].bytes[ba_idx] : '*');
         }
         printf("\n");
     }
@@ -19,36 +19,36 @@ void print_guesses(byte_array ** guesses, size_t num_plaintexts) {
  * to set the bytes in every other plaintext at the same position. You can overwrite an old guess by just
  * calling this again for the same value of plain_pos.
  */
-void guess(byte_array * xored_plaintexts[][40], byte_array * guesses[], size_t num_plaintexts, size_t plain_num, size_t plain_pos, uint8_t c) {
+void guess(byte_array xored_plaintexts[][40], byte_array guesses[], size_t num_plaintexts, size_t plain_num, size_t plain_pos, uint8_t c) {
     size_t plain_idx;
-    guesses[plain_num]->bytes[plain_pos] = c;
+    guesses[plain_num].bytes[plain_pos] = c;
     for (plain_idx = 0 ; plain_idx < plain_num ; ++plain_idx) {
-        if (plain_pos < guesses[plain_idx]->len)
-            guesses[plain_idx]->bytes[plain_pos] = guesses[plain_num]->bytes[plain_pos] ^ xored_plaintexts[plain_idx][plain_num]->bytes[plain_pos];
+        if (plain_pos < guesses[plain_idx].len)
+            guesses[plain_idx].bytes[plain_pos] = guesses[plain_num].bytes[plain_pos] ^ xored_plaintexts[plain_idx][plain_num].bytes[plain_pos];
     }
     for (plain_idx = plain_num + 1 ; plain_idx < num_plaintexts ; ++plain_idx) {
-        if (plain_pos < guesses[plain_idx]->len)
-            guesses[plain_idx]->bytes[plain_pos] = guesses[plain_num]->bytes[plain_pos] ^ xored_plaintexts[plain_num][plain_idx]->bytes[plain_pos];
+        if (plain_pos < guesses[plain_idx].len)
+            guesses[plain_idx].bytes[plain_pos] = guesses[plain_num].bytes[plain_pos] ^ xored_plaintexts[plain_num][plain_idx].bytes[plain_pos];
     }
 }
 
 /* Like the previous function but don't actually record the guesses. Just score them based on the percent of
  * implied bytes that would be alphabetical characters or spaces.
  */
-double score_guess(byte_array * xored_plaintexts[][40], byte_array * guesses[], size_t num_plaintexts, size_t plain_num, size_t plain_pos, uint8_t c) {
+double score_guess(byte_array xored_plaintexts[][40], byte_array guesses[], size_t num_plaintexts, size_t plain_num, size_t plain_pos, uint8_t c) {
     size_t num_good_chars = 0;
     size_t total_chars = 0;
     size_t plain_idx;
     for (plain_idx = 0 ; plain_idx < plain_num ; ++plain_idx) {
-        if (plain_pos < guesses[plain_idx]->len) {
-            uint8_t ch = c ^ xored_plaintexts[plain_idx][plain_num]->bytes[plain_pos];
+        if (plain_pos < guesses[plain_idx].len) {
+            uint8_t ch = c ^ xored_plaintexts[plain_idx][plain_num].bytes[plain_pos];
             if (isalpha(ch) || ch == ' ') ++num_good_chars;
             ++total_chars;
         }
     }
     for (plain_idx = plain_num + 1 ; plain_idx < num_plaintexts ; ++plain_idx) {
-        if (plain_pos < guesses[plain_idx]->len) {
-            uint8_t ch = c ^ xored_plaintexts[plain_num][plain_idx]->bytes[plain_pos];
+        if (plain_pos < guesses[plain_idx].len) {
+            uint8_t ch = c ^ xored_plaintexts[plain_num][plain_idx].bytes[plain_pos];
             if (isalpha(ch) || ch == ' ') ++num_good_chars;
             ++total_chars;
         }
@@ -114,9 +114,9 @@ int main(int argc, char ** argv) {
         "QSB0ZXJyaWJsZSBiZWF1dHkgaXMgYm9ybi4="
     };
     const size_t num_plaintexts = sizeof(plaintexts)/sizeof(char *);
-    byte_array * ciphertexts[num_plaintexts];
-    byte_array * xored_plaintexts[num_plaintexts][num_plaintexts];
-    byte_array * plaintext_guesses[num_plaintexts];
+    byte_array ciphertexts[num_plaintexts];
+    byte_array xored_plaintexts[num_plaintexts][num_plaintexts];
+    byte_array plaintext_guesses[num_plaintexts];
 
     size_t * byte_freq = calloc(256, sizeof(size_t));
 
@@ -124,12 +124,12 @@ int main(int argc, char ** argv) {
     size_t longest_plaintext_len = 0;
 
     for (idx = 0 ; idx < num_plaintexts ; ++idx) {
-        byte_array * plain = base64_to_bytes(plaintexts[idx]);
+        byte_array plain = base64_to_bytes(plaintexts[idx]);
         ciphertexts[idx] = encrypt_ctr_mystery_key(plain);
         free_byte_array(plain);
-        plaintext_guesses[idx] = alloc_byte_array(ciphertexts[idx]->len);
-        if (ciphertexts[idx]->len > longest_plaintext_len)
-            longest_plaintext_len = ciphertexts[idx]->len;
+        plaintext_guesses[idx] = alloc_byte_array(ciphertexts[idx].len);
+        if (ciphertexts[idx].len > longest_plaintext_len)
+            longest_plaintext_len = ciphertexts[idx].len;
     }
 
     bool guessed_position[longest_plaintext_len];
@@ -144,9 +144,9 @@ int main(int argc, char ** argv) {
      */
     for (a = 0 ; a < num_plaintexts - 1 ; ++a) {
         for (b = a + 1 ; b < num_plaintexts ; ++b) {
-            xored_plaintexts[a][b] = xor_byte_arrays(NULL, ciphertexts[a], ciphertexts[b]);
-            for (idx = 0; idx < xored_plaintexts[a][b]->len ; ++idx) {
-                uint8_t byte = xored_plaintexts[a][b]->bytes[idx];
+            xored_plaintexts[a][b] = xor_byte_arrays(NO_BA, ciphertexts[a], ciphertexts[b]);
+            for (idx = 0; idx < xored_plaintexts[a][b].len ; ++idx) {
+                uint8_t byte = xored_plaintexts[a][b].bytes[idx];
                 ++byte_freq[byte];
             }
         }
@@ -159,8 +159,8 @@ int main(int argc, char ** argv) {
     printf("Assuming 0x45 is always XOR of 'e' and space character...\n\n");
     for (a = 0 ; a < num_plaintexts - 1 ; ++a) {
         for (b = a + 1 ; b < num_plaintexts ; ++b) {
-            for (idx = 0; idx < xored_plaintexts[a][b]->len ; ++idx) {
-                uint8_t byte = xored_plaintexts[a][b]->bytes[idx];
+            for (idx = 0; idx < xored_plaintexts[a][b].len ; ++idx) {
+                uint8_t byte = xored_plaintexts[a][b].bytes[idx];
                 if (!guessed_position[idx] && byte == 0x45) {
                     if (score_guess(xored_plaintexts, plaintext_guesses, num_plaintexts, a, idx, ' ') >
                         score_guess(xored_plaintexts, plaintext_guesses, num_plaintexts, a, idx, ' ' ^ byte)) {

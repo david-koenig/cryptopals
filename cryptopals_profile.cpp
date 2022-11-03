@@ -48,24 +48,24 @@ void print_map(const std::map<std::string, std::string> & m) {
     }
 }
 
-std::string bytes_to_string(const byte_array * ba) {
+std::string bytes_to_string(const byte_array ba) {
     std::string s;
-    for (size_t idx = 0 ; idx < ba->len ; ++idx) {
-        s += ba->bytes[idx];
+    for (size_t idx = 0 ; idx < ba.len ; ++idx) {
+        s += ba.bytes[idx];
     }
     return s;
 }
 
-byte_array * generate_encrypted_profile(const std::string & email) {
+byte_array generate_encrypted_profile(const std::string & email) {
     std::string profile = profile_for(email);
-    byte_array * plain = cstring_to_bytes(profile.c_str());
-    byte_array * cipher = encrypt_ecb_mystery_key(plain);
+    byte_array plain = cstring_to_bytes(profile.c_str());
+    byte_array cipher = encrypt_ecb_mystery_key(plain);
     free_byte_array(plain);
     return cipher;
 }
 
-std::map<std::string, std::string> decrypt_profile(const byte_array * cipher) {
-    byte_array * plain = decrypt_ecb_mystery_key(cipher);
+std::map<std::string, std::string> decrypt_profile(const byte_array cipher) {
+    byte_array plain = decrypt_ecb_mystery_key(cipher);
     std::string profile = bytes_to_string(plain);
     free_byte_array(plain);
     return parse_kv_string(profile);

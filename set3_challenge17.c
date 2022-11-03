@@ -15,12 +15,12 @@ int main(int argc, char ** argv) {
     int iter;
     for (iter = 0; !ret && iter < iterations; ++iter) {
 
-        byte_array * iv = NULL;
-        byte_array * spoof = NULL;
-        byte_array * plain = NULL;
+        byte_array iv = NO_BA;
+        byte_array spoof = NO_BA;
+        byte_array plain = NO_BA;
 
-        const byte_array * cipher = padding_oracle_encrypt(&iv);
-        if (cipher->len < 32) {
+        byte_array cipher = padding_oracle_encrypt(&iv);
+        if (cipher.len < 32) {
             /* If cipher has only one block, the attack is a hybrid of the last block and
              * first block attacks here. You manipulate the IV and use the existing padding bytes.
              */
@@ -33,10 +33,10 @@ int main(int argc, char ** argv) {
          * to determine padding length.
          */
         spoof = copy_byte_array(cipher);
-        size_t cipher_idx = spoof->len - 32;
+        size_t cipher_idx = spoof.len - 32;
 
         do {
-            spoof->bytes[cipher_idx++]++; // just mangling this byte in any way
+            spoof.bytes[cipher_idx++]++; // just mangling this byte in any way
         } while (padding_oracle_decrypt(spoof, iv));
         
         /* We added one extra to cipher_idx in last iteration of loop, so we need to subtract 1.
@@ -44,8 +44,8 @@ int main(int argc, char ** argv) {
          * bytes that were changed.
          */
         size_t plain_len = cipher_idx + 15;
-        uint8_t real_pad_len = cipher->len - plain_len;
-        printf("cipher len = %li, plain_len = %li, real_pad_len = %hhi\n", cipher->len, plain_len, real_pad_len);
+        uint8_t real_pad_len = cipher.len - plain_len;
+        printf("cipher len = %li, plain_len = %li, real_pad_len = %hhi\n", cipher.len, plain_len, real_pad_len);
     
         /* We mangled spoof, so let's get a clean copy of the cipher. Also allocate array for the
          * plain bytes that we will recover.
@@ -56,20 +56,20 @@ int main(int argc, char ** argv) {
 
         /* Step 2: Recover byte at a time of last block by changing padding number. */
         uint8_t fake_pad_len = real_pad_len + 1;
-        size_t plain_idx = plain->len - 1;
+        size_t plain_idx = plain.len - 1;
         for ( ; fake_pad_len <= 16 ; ++fake_pad_len, --plain_idx) {
 
             /* Raise the padding number of existing padding by 1. */
-            for (cipher_idx = cipher->len - real_pad_len ; cipher_idx < cipher->len ; cipher_idx++) {
-                spoof->bytes[cipher_idx - 16] ^= fake_pad_len ^ (fake_pad_len - 1);
+            for (cipher_idx = cipher.len - real_pad_len ; cipher_idx < cipher.len ; cipher_idx++) {
+                spoof.bytes[cipher_idx - 16] ^= fake_pad_len ^ (fake_pad_len - 1);
             }
 
             /* Keep manipulating next byte of plain until it matches padding number */
             uint32_t plain_xor = 0;
             while (!padding_oracle_decrypt(spoof, iv)) {
-                spoof->bytes[plain_idx - 16] ^= plain_xor;
+                spoof.bytes[plain_idx - 16] ^= plain_xor;
                 ++plain_xor;
-                spoof->bytes[plain_idx - 16] ^= plain_xor;
+                spoof.bytes[plain_idx - 16] ^= plain_xor;
 
                 if (plain_xor >= 256) {
                     fprintf(stderr, "Error, no hit!\n");
@@ -78,13 +78,13 @@ int main(int argc, char ** argv) {
                 }
             }
 
-            plain->bytes[plain_idx] = fake_pad_len ^ plain_xor;
-            //printf("hit when fake_pad_len = %hhi and plain_xor = %i so plain[%li] = %c\n", fake_pad_len, plain_xor, plain_idx, plain->bytes[plain_idx]);
+            plain.bytes[plain_idx] = fake_pad_len ^ plain_xor;
+            //printf("hit when fake_pad_len = %hhi and plain_xor = %i so plain[%li] = %c\n", fake_pad_len, plain_xor, plain_idx, plain.bytes[plain_idx]);
 
             /* Set up bytes already spoofed for the next iteration of loop */
             size_t idx;
-            for (idx = plain_idx ; idx < cipher->len - real_pad_len ; ++idx) {
-                spoof->bytes[idx - 16] ^= fake_pad_len ^ (fake_pad_len + 1);
+            for (idx = plain_idx ; idx < cipher.len - real_pad_len ; ++idx) {
+                spoof.bytes[idx - 16] ^= fake_pad_len ^ (fake_pad_len + 1);
             }
         }
 
@@ -108,9 +108,9 @@ int main(int argc, char ** argv) {
                         break;
                     }
                 }
-                spoof->bytes[plain_idx - 16] ^= plain_xor;
+                spoof.bytes[plain_idx - 16] ^= plain_xor;
                 ++plain_xor;
-                spoof->bytes[plain_idx - 16] ^= plain_xor;
+                spoof.bytes[plain_idx - 16] ^= plain_xor;
 
             } while (plain_xor < 256);
 
@@ -124,15 +124,15 @@ int main(int argc, char ** argv) {
 
                 starting_plain_idx = plain_idx;
                 plain_xor = candidates[candidate_num];
-                plain->bytes[plain_idx] = plain_xor ^ 1;
-                //printf("assuming plain[%li] = %c\n", plain_idx, plain->bytes[plain_idx]);
-                spoof->bytes[plain_idx - 16] ^= plain_xor ^ 1 ^ 2;
+                plain.bytes[plain_idx] = plain_xor ^ 1;
+                //printf("assuming plain[%li] = %c\n", plain_idx, plain.bytes[plain_idx]);
+                spoof.bytes[plain_idx - 16] ^= plain_xor ^ 1 ^ 2;
                 for (fake_pad_len = 2, --plain_idx ; fake_pad_len <= 16 ; ++fake_pad_len, --plain_idx) {
                     plain_xor = 0;
                     while (!padding_oracle_decrypt(spoof, iv) && plain_xor < 256) {
-                        spoof->bytes[plain_idx - 16] ^= plain_xor;
+                        spoof.bytes[plain_idx - 16] ^= plain_xor;
                         ++plain_xor;
-                        spoof->bytes[plain_idx - 16] ^= plain_xor;
+                        spoof.bytes[plain_idx - 16] ^= plain_xor;
                     }
                     if (plain_xor == 256) {
                         printf("bad candidate discovered\n");
@@ -140,12 +140,12 @@ int main(int argc, char ** argv) {
                         plain_idx = starting_plain_idx;
                         break;
                     }
-                    plain->bytes[plain_idx] = plain_xor ^ fake_pad_len;
-                    //printf("hit when fake_pad_len = %hhi and plain_xor = %i so plain[%li] = %c\n", fake_pad_len, plain_xor, plain_idx, plain->bytes[plain_idx]);
+                    plain.bytes[plain_idx] = plain_xor ^ fake_pad_len;
+                    //printf("hit when fake_pad_len = %hhi and plain_xor = %i so plain[%li] = %c\n", fake_pad_len, plain_xor, plain_idx, plain.bytes[plain_idx]);
 
                     size_t idx;
                     for (idx = plain_idx; idx <= starting_plain_idx; ++idx) {
-                        spoof->bytes[idx - 16] ^= fake_pad_len ^ (fake_pad_len + 1);
+                        spoof.bytes[idx - 16] ^= fake_pad_len ^ (fake_pad_len + 1);
                     }
                 }
             }
@@ -157,13 +157,13 @@ int main(int argc, char ** argv) {
             //printf("Another block recovered! plain_idx = %li\n", plain_idx);
         }
         /* Step 3: Attack on final block. Same as other full blocks except that you need to manipulate bits of IV
-         * to affect first block of plain. first_block_cipher takes place of spoof here, which is a constant
-         * bit array, because all the manipulation happens to the IV.
+         * to affect first block of plain. first_block_cipher takes place of spoof here, and all the manipulation
+         * happens to the IV.
          */
         assert(plain_idx == 15);
 
-        const byte_array * first_block_cipher = sub_byte_array(cipher, 0, 16);
-        byte_array * spoof_iv = copy_byte_array(iv);
+        byte_array first_block_cipher = sub_byte_array(cipher, 0, 16);
+        byte_array spoof_iv = copy_byte_array(iv);
         
         uint32_t candidates[2] = {-1, -1};
         int candidate_num = 0;
@@ -176,9 +176,9 @@ int main(int argc, char ** argv) {
                     break;
                 }
             }
-            spoof_iv->bytes[15] ^= plain_xor;
+            spoof_iv.bytes[15] ^= plain_xor;
             ++plain_xor;
-            spoof_iv->bytes[15] ^= plain_xor;
+            spoof_iv.bytes[15] ^= plain_xor;
 
         } while (plain_xor < 256);
 
@@ -190,27 +190,27 @@ int main(int argc, char ** argv) {
             spoof_iv = copy_byte_array(iv);
             
             plain_xor = candidates[candidate_num];
-            plain->bytes[15] = plain_xor ^ 1;
-            //printf("assuming plain[15] = %c\n", plain->bytes[15]);
-            spoof_iv->bytes[15] ^= plain_xor ^ 1 ^ 2;
+            plain.bytes[15] = plain_xor ^ 1;
+            //printf("assuming plain[15] = %c\n", plain.bytes[15]);
+            spoof_iv.bytes[15] ^= plain_xor ^ 1 ^ 2;
             for (fake_pad_len = 2, plain_idx = 14 ; fake_pad_len <= 16 ; ++fake_pad_len, --plain_idx) {
                 plain_xor = 0;
                 while (!padding_oracle_decrypt(first_block_cipher, spoof_iv) && plain_xor < 256) {
-                    spoof_iv->bytes[plain_idx] ^= plain_xor;
+                    spoof_iv.bytes[plain_idx] ^= plain_xor;
                     ++plain_xor;
-                    spoof_iv->bytes[plain_idx] ^= plain_xor;
+                    spoof_iv.bytes[plain_idx] ^= plain_xor;
                 }
                 if (plain_xor == 256) {
                     printf("bad candidate discovered\n");
                     bad_candidate = true;
                     break;
                 }
-                plain->bytes[plain_idx] = plain_xor ^ fake_pad_len;
-                //printf("hit when fake_pad_len = %hhi and plain_xor = %i so plain[%li] = %c\n", fake_pad_len, plain_xor, plain_idx, plain->bytes[plain_idx]);
+                plain.bytes[plain_idx] = plain_xor ^ fake_pad_len;
+                //printf("hit when fake_pad_len = %hhi and plain_xor = %i so plain[%li] = %c\n", fake_pad_len, plain_xor, plain_idx, plain.bytes[plain_idx]);
 
                 size_t idx;
                 for (idx = plain_idx; idx <= 15; ++idx) {
-                    spoof_iv->bytes[idx] ^= fake_pad_len ^ (fake_pad_len + 1);
+                    spoof_iv.bytes[idx] ^= fake_pad_len ^ (fake_pad_len + 1);
                 }
             }
         }
@@ -224,12 +224,12 @@ int main(int argc, char ** argv) {
 
 
     DONE:
-        free_byte_array(iv); iv = NULL;
-        free_byte_array((byte_array *)cipher); cipher = NULL;
-        free_byte_array((byte_array *)first_block_cipher); first_block_cipher = NULL;
-        free_byte_array(spoof_iv); spoof_iv = NULL;
-        free_byte_array(spoof); spoof = NULL;
-        free_byte_array(plain); plain = NULL;
+        free_byte_array(iv); iv = NO_BA;
+        free_byte_array(cipher); cipher = NO_BA;
+        free_byte_array(first_block_cipher); first_block_cipher = NO_BA;
+        free_byte_array(spoof_iv); spoof_iv = NO_BA;
+        free_byte_array(spoof); spoof = NO_BA;
+        free_byte_array(plain); plain = NO_BA;
 
     }
 
