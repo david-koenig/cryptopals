@@ -4,7 +4,7 @@
 #include "cryptopals_rsa.h"
 
 int main(int argc, char ** argv) {
-        if (argc != 2) {
+    if (argc != 2) {
         fprintf(stderr, "Usage: %s seed\nRSA encryption of string\n", argv[0]);
         return 1;
     }
