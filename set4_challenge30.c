@@ -11,7 +11,7 @@ int main(int argc, char ** argv) {
     }
     init_random_mac_key(atoi(argv[1]));
 
-    // We do have access to the key, but we do have access to these.
+    // We do not have access to the key, but we do have access to these.
     byte_array message = cstring_to_bytes("comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon");
     byte_array mac = md4_mac(message);
 
