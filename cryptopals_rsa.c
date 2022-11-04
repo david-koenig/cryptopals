@@ -25,6 +25,11 @@ void free_rsa_public_key(const rsa_public_key * public) {
     free(mypublic);
 }
 
+static size_t mpz_sizeinbytes(const mpz_t op) {
+    size_t x = mpz_sizeinbase(op, 16);
+    return (x+1)>>1;
+}
+
 rsa_params rsa_keygen(unsigned long mod_bits) {
     rsa_params params;
     rsa_private_key ** private = (rsa_private_key **) &params.private;
@@ -46,7 +51,9 @@ rsa_params rsa_keygen(unsigned long mod_bits) {
         mpz_sub_ui(p, p, 1);
         mpz_sub_ui(q, q, 1);
         mpz_mul(et, p, q);
-    } while (!mpz_invert((*private)->d, (*public)->e, et));
+        // e must be invertible mod (p-1)(q-1) for encryption/decryption to work and
+        // n must be at least 12 octets for PKCS 1.5 standard (RFC 2313)
+    } while (!mpz_invert((*private)->d, (*public)->e, et) || mpz_sizeinbytes((*public)->n) < 12);
     mpz_set((*private)->n, (*public)->n);
 
     mpz_clears(p, q, et, (mpz_ptr)NULL);
