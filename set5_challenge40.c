@@ -3,9 +3,8 @@
 #include <assert.h>
 #include "cryptopals_rsa.h"
 
-const char * desc = "E=3 RSA broadcast attack";
-
 int main(int argc, char ** argv) {
+    const char * desc = "E=3 RSA broadcast attack";
     if (argc != 2) {
         fprintf(stderr, "Usage: %s seed\n%s\n", argv[0], desc);
         return 1;
@@ -36,7 +35,7 @@ int main(int argc, char ** argv) {
     
     for (int idx = 0; idx < 3 ; idx++) {
         free_rsa_public_key(public[idx]);
-        free_byte_array((byte_array)cipher[idx]);
+        free_byte_array(cipher[idx]);
     }
     free_byte_array(cracked_plain);
     free_byte_array(plain);

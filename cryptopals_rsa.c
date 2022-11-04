@@ -15,15 +15,13 @@ typedef struct rsa_public_key {
 
 void free_rsa_private_key(const rsa_private_key * private) {
     rsa_private_key * myprivate = (rsa_private_key *) private;
-    mpz_clear(myprivate->n);
-    mpz_clear(myprivate->d);
+    mpz_clears(myprivate->n, myprivate->d, (mpz_ptr)NULL);
     free(myprivate);
 }
 
 void free_rsa_public_key(const rsa_public_key * public) {
     rsa_public_key * mypublic = (rsa_public_key *) public;
-    mpz_clear(mypublic->n);
-    mpz_clear(mypublic->e);
+    mpz_clears(mypublic->n, mypublic->e, (mpz_ptr)NULL);
     free(mypublic);
 }
 
@@ -31,18 +29,12 @@ rsa_params rsa_keygen(unsigned long mod_bits) {
     rsa_params params;
     rsa_private_key ** private = (rsa_private_key **) &params.private;
     rsa_public_key ** public = (rsa_public_key **) &params.public;
+    mpz_t p, q, et;
 
     *private = malloc(sizeof(rsa_private_key));
     *public = malloc(sizeof(rsa_public_key));
     mpz_init_set_ui((*public)->e, 3);
-    mpz_init((*public)->n);
-    mpz_init((*private)->d);
-    mpz_init((*private)->n);
-
-    mpz_t p, q, et;
-    mpz_init(p);
-    mpz_init(q);
-    mpz_init(et);
+    mpz_inits((*public)->n, (*private)->d, (*private)->n, p, q, et, (mpz_ptr)NULL);
     
     do {
         mpz_urandomb(p, cryptopals_gmp_randstate, mod_bits);
@@ -57,9 +49,7 @@ rsa_params rsa_keygen(unsigned long mod_bits) {
     } while (!mpz_invert((*private)->d, (*public)->e, et));
     mpz_set((*private)->n, (*public)->n);
 
-    mpz_clear(p);
-    mpz_clear(q);
-    mpz_clear(et);
+    mpz_clears(p, q, et, (mpz_ptr)NULL);
     return params;
 }
 
@@ -70,8 +60,7 @@ byte_array rsa_encrypt(const rsa_public_key * public, const byte_array plain) {
     mpz_powm(mycipher, myplain, public->e, public->n);
 
     byte_array cipher = mpz_to_byte_array(mycipher);
-    mpz_clear(myplain);
-    mpz_clear(mycipher);
+    mpz_clears(myplain, mycipher, (mpz_ptr)NULL);
     return cipher;
 }
 
@@ -82,21 +71,18 @@ byte_array rsa_decrypt(const rsa_private_key * private, const byte_array cipher)
     mpz_powm(myplain, mycipher, private->d, private->n);
 
     byte_array plain = mpz_to_byte_array(myplain);
-    mpz_clear(mycipher);
-    mpz_clear(myplain);
+    mpz_clears(mycipher, myplain, (mpz_ptr)NULL);
     return plain;
 }
 
 byte_array rsa_broadcast_attack(const rsa_public_key * public[3], const byte_array cipher[3]) {
     mpz_t ans, N;
     mpz_t mycipher[3], m[3], inv[3];
-    mpz_init(ans);
-    mpz_init(N);
+    mpz_inits(ans, N, (mpz_ptr)NULL);
 
     for (int idx = 0 ; idx < 3 ; idx++) {
         byte_array_to_mpz_init(mycipher[idx], cipher[idx]);
-        mpz_init(m[idx]);
-        mpz_init(inv[idx]);
+        mpz_inits(m[idx], inv[idx], (mpz_ptr)NULL);
 
         mpz_mul(m[idx], public[(idx+1)%3]->n, public[(idx+2)%3]->n);
         mpz_mul(mycipher[idx], mycipher[idx], m[idx]);
@@ -115,13 +101,39 @@ byte_array rsa_broadcast_attack(const rsa_public_key * public[3], const byte_arr
     }
 
     byte_array plain = mpz_to_byte_array(ans);
-    mpz_clear(ans);
-    mpz_clear(N);
+    mpz_clears(ans, N, (mpz_ptr)NULL);
     for (int idx = 0 ; idx < 3 ; idx++) {
-        mpz_clear(m[idx]);
-        mpz_clear(inv[idx]);
-        mpz_clear(mycipher[idx]);
+        mpz_clears(m[idx], inv[idx], mycipher[idx], (mpz_ptr)NULL);
     }
 
     return plain;
+}
+
+byte_array rsa_unpadded_message_recovery_oracle(rsa_params params, const byte_array cipher) {
+    mpz_t s, s_inv, c, p, c_prime, p_prime;
+    mpz_inits(s, s_inv, c, p, c_prime, p_prime, (mpz_ptr)NULL);
+    byte_array_to_mpz(c, cipher);
+
+    do {
+        mpz_urandomm(s, cryptopals_gmp_randstate, params.public->n);
+        mpz_invert(s_inv, s, params.public->n);
+    } while (mpz_cmp_ui(s, 1) <= 0 || mpz_cmp_ui(s_inv, 1) <= 0);
+
+    mpz_powm(c_prime, s, params.public->e, params.public->n);
+    mpz_mul(c_prime, c_prime, c);
+    mpz_mod(c_prime, c_prime, params.public->n);
+
+    byte_array c_prime_ba = mpz_to_byte_array(c_prime);
+    byte_array p_prime_ba = rsa_decrypt(params.private, c_prime_ba);
+
+    byte_array_to_mpz(p_prime, p_prime_ba);
+    mpz_mul(p, p_prime, s_inv);
+    mpz_mod(p, p, params.public->n);
+
+    byte_array p_ba = mpz_to_byte_array(p);
+
+    mpz_clears(s, s_inv, c, p, c_prime, p_prime, (mpz_ptr)NULL);
+    free_byte_array(c_prime_ba);
+    free_byte_array(p_prime_ba);
+    return p_ba;
 }
