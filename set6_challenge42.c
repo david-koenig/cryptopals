@@ -43,10 +43,15 @@ int main(int argc, char ** argv) {
     printf("Signature produced by rsa_md4_sign_msg matches known answer!\n");
 
     assert(rsa_md4_verify_sig(params.public, msg, sig));
-    printf("Signature verified!\n");
+    printf("Real signature verified!\n");
+
+    byte_array fake_sig = hack_sig(params.public, msg);
+    assert(rsa_md4_verify_sig(params.public, msg, fake_sig));
+    printf("Fake signature verified!\n");
 
     free_byte_array(msg);
     free_byte_array(sig);
+    free_byte_array(fake_sig);
     free_rsa_private_key(params.private);
     free_rsa_public_key(params.public);
     cleanup_gmp();

@@ -3,6 +3,7 @@
 #include "cryptopals_md4.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 typedef struct rsa_private_key {
     mpz_t n; // modulus
@@ -200,7 +201,7 @@ byte_array rsa_unpadded_message_recovery_oracle(rsa_params params, const byte_ar
 static uint8_t asn1_bytes[] =
 {0x00, 0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48,
  0x86, 0xf7, 0x0d, 0x02, 0x04, 0x05, 0x00, 0x04, 0x10};
-static const byte_array rsa_md4_asn1 = {asn1_bytes, 19};
+static const byte_array rsa_md4_asn1 = {asn1_bytes, sizeof(asn1_bytes)};
 
 byte_array rsa_md4_sign_msg(const rsa_private_key * private, const byte_array msg) {
     byte_array digest = md4(msg);
@@ -250,4 +251,30 @@ OUT:
     free_byte_array(digest);
     free_byte_array(decrypted_sig);
     return ret;
+}
+
+byte_array hack_sig(const rsa_public_key * public, const byte_array msg) {
+    size_t mod_size = mpz_sizeinbytes(public->n);
+    byte_array fake_sig = alloc_byte_array(mod_size);
+    fake_sig.bytes[1] = 0x01;
+    int idx;
+    for (idx = 2 ; idx < 6; ++idx) {
+        fake_sig.bytes[idx] = 0xff;
+    }
+    memcpy(fake_sig.bytes+idx, rsa_md4_asn1.bytes, rsa_md4_asn1.len);
+    idx += rsa_md4_asn1.len;
+    byte_array digest = md4(msg);
+    memcpy(fake_sig.bytes+idx, digest.bytes, digest.len);
+
+    mpz_t fake, signed_fake;
+    byte_array_to_mpz_init(fake, fake_sig);
+    mpz_init(signed_fake);
+    mpz_root(signed_fake, fake, 3);
+    mpz_add_ui(signed_fake, signed_fake, 1);
+
+    byte_array signed_fake_sig = mpz_to_byte_array(signed_fake);
+    mpz_clears(fake, signed_fake, (mpz_ptr)NULL);
+    free_byte_array(fake_sig);
+    free_byte_array(digest);
+    return signed_fake_sig;
 }

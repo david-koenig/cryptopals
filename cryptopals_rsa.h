@@ -34,3 +34,6 @@ byte_array rsa_broadcast_attack(const rsa_public_key * public[3], const byte_arr
 
 // Decrypts message even if decrypter had safeguard to not decrypt same message more than once.
 byte_array rsa_unpadded_message_recovery_oracle(rsa_params params, const byte_array cipher);
+
+// Create a fake signature without the private key using Bleichenbacher's e=3 attack
+byte_array hack_sig(const rsa_public_key * public, const byte_array msg);
