@@ -1,5 +1,6 @@
 #include "cryptopals_rsa.h"
 #include "cryptopals_gmp_private.h"
+#include "cryptopals_md4.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -28,6 +29,35 @@ void free_rsa_public_key(const rsa_public_key * public) {
 static size_t mpz_sizeinbytes(const mpz_t op) {
     size_t x = mpz_sizeinbase(op, 16);
     return (x+1)>>1;
+}
+
+rsa_params fixed_key_pair() {
+    rsa_params params;
+    rsa_private_key ** private = (rsa_private_key **) &params.private;
+    rsa_public_key ** public = (rsa_public_key **) &params.public;
+    *private = malloc(sizeof(rsa_private_key));
+    *public = malloc(sizeof(rsa_public_key));
+    mpz_init_set_str((*public)->n,
+                     "A5A500CED1CB97086724457D5BD65F11"
+                     "5005018CBDBF11E520FBD1A49BF04B77"
+                     "F948EE64DF0C9F036C2E1D0E61B75B05"
+                     "C3082B96357B51816C53882F39427D87"
+                     "8C3204B8A08C2A08D44681B8F37535E6"
+                     "33D86B3D5C609E84A00D5A6C8FF9045A"
+                     "26800271D328EED516FDD6469137D34F"
+                     "A545BBED8E3ECB6B6AA2685C69EAA657", 16);
+    mpz_init_set((*private)->n, (*public)->n);
+    mpz_init_set_ui((*public)->e, 3);
+    mpz_init_set_str((*private)->d,
+                     "6E6E0089E13264B044C2D8FE3D3994B6"
+                     "3558ABB3292A0BEE15FD366DBD4ADCFA"
+                     "A6309EEDEA086A02481EBE09967A3CAE"
+                     "8205726423A78BAB9D8D0574D0D6FE59"
+                     "4A7862F68853AEAF0D0F65DC61C4E6D4"
+                     "2BDC4A013CB37F1CACD559FB90C38E3F"
+                     "42522EDEE32F0D7904EBF6B8A16869EC"
+                     "B71CEFB15EC878398FAE48F4F2E4C62B", 16);
+    return params;
 }
 
 rsa_params rsa_keygen(unsigned long mod_bits) {
@@ -71,6 +101,10 @@ byte_array rsa_encrypt(const rsa_public_key * public, const byte_array plain) {
     return cipher;
 }
 
+static inline byte_array decrypt_sig(const rsa_public_key * public, const byte_array sig) {
+    return rsa_encrypt(public, sig);
+}
+
 byte_array rsa_decrypt(const rsa_private_key * private, const byte_array cipher) {
     mpz_t mycipher, myplain;
     mpz_init(myplain);
@@ -80,6 +114,10 @@ byte_array rsa_decrypt(const rsa_private_key * private, const byte_array cipher)
     byte_array plain = mpz_to_byte_array(myplain);
     mpz_clears(mycipher, myplain, (mpz_ptr)NULL);
     return plain;
+}
+
+static inline byte_array encrypt_sig(const rsa_private_key * private, const byte_array plain) {
+    return rsa_decrypt(private, plain);
 }
 
 byte_array rsa_broadcast_attack(const rsa_public_key * public[3], const byte_array cipher[3]) {
@@ -143,4 +181,73 @@ byte_array rsa_unpadded_message_recovery_oracle(rsa_params params, const byte_ar
     free_byte_array(c_prime_ba);
     free_byte_array(p_prime_ba);
     return p_ba;
+}
+
+// According to PKCS1.5 padding rules, a digitally signature
+// using MD4 as the digest algorithm will always have the
+// following form before it is encrypted with private key:
+// 0001ff..ff003020300c06082a864886f70d020405000410
+// followed by the 16 byte MD4 hash of the signed file.
+// Here "ff..ff" represents a long sequence of ff bytes to
+// extend the sequence to the number of bytes of the modulus.
+
+// The part beginning "3020300c..." is the ASN.1 format
+// identifying that this is digested with MD4. In particular,
+// the byte sequence "2a864886f70d0204" is the OID encoding
+// of 1.2.840.113549.2.4, and the final "10" indicates the
+// digest value is 16 bytes long.
+
+static uint8_t asn1_bytes[] =
+{0x00, 0x30, 0x20, 0x30, 0x0c, 0x06, 0x08, 0x2a, 0x86, 0x48,
+ 0x86, 0xf7, 0x0d, 0x02, 0x04, 0x05, 0x00, 0x04, 0x10};
+static const byte_array rsa_md4_asn1 = {asn1_bytes, 19};
+
+byte_array rsa_md4_sign_msg(const rsa_private_key * private, const byte_array msg) {
+    byte_array digest = md4(msg);
+
+    size_t mod_size = mpz_sizeinbytes(private->n);
+    byte_array padding = alloc_byte_array(mod_size - rsa_md4_asn1.len - digest.len);
+    padding.bytes[0] = 0x00;
+    padding.bytes[1] = 0x01;
+    for (int idx = 2 ; idx < padding.len ; ++idx) {
+        padding.bytes[idx] = 0xff;
+    }
+    byte_array padded_digest = append_three_byte_arrays(padding, rsa_md4_asn1, digest);
+    byte_array sig = encrypt_sig(private, padded_digest);
+
+    free_byte_array(digest);
+    free_byte_array(padding);
+    free_byte_array(padded_digest);
+    return sig;
+}
+
+// A faulty implementation of signature verification that
+// does not check that the sequence of "ff..ff" is long
+// enough to right-justify the hash value.
+bool rsa_md4_verify_sig(const rsa_public_key * public, const byte_array msg, const byte_array sig) {
+    bool ret = false;
+
+    byte_array digest = md4(msg);
+    byte_array decrypted_sig = decrypt_sig(public, sig);
+    size_t mod_size = mpz_sizeinbytes(public->n);
+    // because of how decrypted sig is printed, leading zero byte is truncated from array
+    if (decrypted_sig.len + 1 != mod_size ||
+        decrypted_sig.bytes[0] != 0x01 ||
+        decrypted_sig.bytes[1] != 0xff) {
+        goto OUT;
+    }
+    int idx = 1;
+    while (decrypted_sig.bytes[++idx] == 0xff);
+    const byte_array window = {&decrypted_sig.bytes[idx], rsa_md4_asn1.len};
+    if (!byte_arrays_equal(window, rsa_md4_asn1)) {
+        goto OUT;
+    }
+    idx += rsa_md4_asn1.len;
+    const byte_array decrypted_dgst = {&decrypted_sig.bytes[idx], digest.len};
+
+    ret = byte_arrays_equal(decrypted_dgst, digest);
+OUT:
+    free_byte_array(digest);
+    free_byte_array(decrypted_sig);
+    return ret;
 }

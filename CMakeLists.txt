@@ -8,6 +8,7 @@ include(FindOpenSSL)
 find_library(Gmp gmp REQUIRED)
 find_path(Gmp_path gmp.h)
 
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 

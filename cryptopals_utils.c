@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h> // stat
+#include <sys/stat.h>  // stat
+#include <unistd.h>    // stat
 #include "cryptopals_utils.h"
 
 byte_array alloc_byte_array(size_t len) {
@@ -278,6 +281,28 @@ size_t hamming_distance(const byte_array x, const byte_array y) {
     size_t bits = pop_count_byte_array(z);
     free_byte_array(z);
     return bits;
+}
+
+byte_array file_to_bytes(const char * filename) {
+    struct stat sb;
+    if (stat(filename, &sb) == -1) {
+        fprintf(stderr, "%s: File %s not found\n", __func__, filename);
+        exit(1);
+    }
+    off_t filesize = sb.st_size;
+    byte_array ba = alloc_byte_array(filesize);
+    FILE * f = fopen(filename, "r");
+    if (f == NULL) {
+        fprintf(stderr, "%s: Error opening file %s\n", __func__, filename);
+        exit(2);
+    }
+    size_t bytes_read = fread(ba.bytes, 1, filesize, f);
+    if (bytes_read != filesize) {
+        fprintf(stderr, "%s: Error reading file %s. %ld bytes were read.\n", __func__, filename, bytes_read);
+        exit(3);
+    }
+    fclose(f);
+    return ba;
 }
 
 byte_array base64_file_to_bytes(const char * filename) {
