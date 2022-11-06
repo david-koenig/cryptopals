@@ -10,23 +10,23 @@ int main(int argc, char ** argv) {
     }
     unsigned int seed =	atoi(argv[1]);
     init_gmp(seed);
-    rsa_params params = rsa_keygen(1024);
+    rsa_key_pair kp = rsa_keygen(1024);
 
     byte_array msg = cstring_to_bytes(argv[2]);
-    byte_array sig = rsa_md4_sign_msg(params.private, msg);
+    byte_array sig = rsa_md4_sign_msg(kp.private, msg);
     
-    assert(rsa_md4_verify_sig(params.public, msg, sig));
+    assert(rsa_md4_verify_sig(kp.public, msg, sig));
     printf("Real signature verified!\n");
 
-    byte_array fake_sig = hack_sig(params.public, msg);
-    assert(rsa_md4_verify_sig(params.public, msg, fake_sig));
+    byte_array fake_sig = hack_sig(kp.public, msg);
+    assert(rsa_md4_verify_sig(kp.public, msg, fake_sig));
     printf("Fake signature verified!\n");
 
     free_byte_array(msg);
     free_byte_array(sig);
     free_byte_array(fake_sig);
-    free_rsa_private_key(params.private);
-    free_rsa_public_key(params.public);
+    free_rsa_private_key(kp.private);
+    free_rsa_public_key(kp.public);
     cleanup_gmp();
     return 0;
 }

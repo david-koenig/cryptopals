@@ -12,19 +12,19 @@ int main(int argc, char ** argv) {
     unsigned int seed =	atoi(argv[1]);
     init_gmp(seed);
 
-    rsa_params params = rsa_keygen(512);
+    rsa_key_pair kp = rsa_keygen(512);
     byte_array plain = cstring_to_bytes(desc);
-    byte_array cipher = rsa_encrypt(params.public, plain);
+    byte_array cipher = rsa_encrypt(kp.public, plain);
 
-    byte_array decrypt = rsa_unpadded_message_recovery_oracle(params, cipher);
+    byte_array decrypt = rsa_unpadded_message_recovery_oracle(kp, cipher);
     printf("Plaintext: ");
     print_byte_array_ascii(plain);
     printf("Cracked! : ");
     print_byte_array_ascii(decrypt);
     assert(byte_arrays_equal(plain, decrypt));
 
-    free_rsa_private_key(params.private);
-    free_rsa_public_key(params.public);
+    free_rsa_private_key(kp.private);
+    free_rsa_public_key(kp.public);
     free_byte_array(plain);
     free_byte_array(cipher);
     free_byte_array(decrypt);

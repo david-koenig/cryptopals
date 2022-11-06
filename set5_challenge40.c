@@ -20,10 +20,10 @@ int main(int argc, char ** argv) {
         // This doesn't check that the generated moduli are pairwise coprime.
         // But as long as the random number generation is reasonable, the chance
         // of that is negligible.
-        rsa_params params = rsa_keygen(256);
-        free_rsa_private_key(params.private);
-        public[idx] = params.public;
-        cipher[idx] = rsa_encrypt(params.public, plain);
+        rsa_key_pair kp = rsa_keygen(256);
+        free_rsa_private_key(kp.private);
+        public[idx] = kp.public;
+        cipher[idx] = rsa_encrypt(kp.public, plain);
     }
     
     byte_array cracked_plain = rsa_broadcast_attack(public, cipher);

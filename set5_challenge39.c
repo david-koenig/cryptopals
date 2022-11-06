@@ -10,11 +10,11 @@ int main(int argc, char ** argv) {
     }
     unsigned int seed =	atoi(argv[1]);
     init_gmp(seed);
-    rsa_params params = rsa_keygen(256);
+    rsa_key_pair kp = rsa_keygen(256);
 
     byte_array plain = cstring_to_bytes("Testing RSA encryption and decryption");
-    byte_array cipher = rsa_encrypt(params.public, plain);
-    byte_array decrypt = rsa_decrypt(params.private, cipher);
+    byte_array cipher = rsa_encrypt(kp.public, plain);
+    byte_array decrypt = rsa_decrypt(kp.private, cipher);
 
     printf("Plaintext: ");
     print_byte_array_ascii(plain);
@@ -25,8 +25,8 @@ int main(int argc, char ** argv) {
     free_byte_array(plain);
     free_byte_array(cipher);
     free_byte_array(decrypt);
-    free_rsa_private_key(params.private);
-    free_rsa_public_key(params.public);
+    free_rsa_private_key(kp.private);
+    free_rsa_public_key(kp.public);
     cleanup_gmp();
     return 0;
 }
