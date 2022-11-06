@@ -16,8 +16,6 @@ rsa_params;
 void free_rsa_private_key(const rsa_private_key * private);
 void free_rsa_public_key(const rsa_public_key * public);
 
-rsa_params fixed_key_pair();
-
 // Uses fixed public key e=3, allocates both private and public key.
 rsa_params rsa_keygen(unsigned long mod_bits);
 

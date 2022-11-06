@@ -32,35 +32,6 @@ static size_t mpz_sizeinbytes(const mpz_t op) {
     return (x+1)>>1;
 }
 
-rsa_params fixed_key_pair() {
-    rsa_params params;
-    rsa_private_key ** private = (rsa_private_key **) &params.private;
-    rsa_public_key ** public = (rsa_public_key **) &params.public;
-    *private = malloc(sizeof(rsa_private_key));
-    *public = malloc(sizeof(rsa_public_key));
-    mpz_init_set_str((*public)->n,
-                     "A5A500CED1CB97086724457D5BD65F11"
-                     "5005018CBDBF11E520FBD1A49BF04B77"
-                     "F948EE64DF0C9F036C2E1D0E61B75B05"
-                     "C3082B96357B51816C53882F39427D87"
-                     "8C3204B8A08C2A08D44681B8F37535E6"
-                     "33D86B3D5C609E84A00D5A6C8FF9045A"
-                     "26800271D328EED516FDD6469137D34F"
-                     "A545BBED8E3ECB6B6AA2685C69EAA657", 16);
-    mpz_init_set((*private)->n, (*public)->n);
-    mpz_init_set_ui((*public)->e, 3);
-    mpz_init_set_str((*private)->d,
-                     "6E6E0089E13264B044C2D8FE3D3994B6"
-                     "3558ABB3292A0BEE15FD366DBD4ADCFA"
-                     "A6309EEDEA086A02481EBE09967A3CAE"
-                     "8205726423A78BAB9D8D0574D0D6FE59"
-                     "4A7862F68853AEAF0D0F65DC61C4E6D4"
-                     "2BDC4A013CB37F1CACD559FB90C38E3F"
-                     "42522EDEE32F0D7904EBF6B8A16869EC"
-                     "B71CEFB15EC878398FAE48F4F2E4C62B", 16);
-    return params;
-}
-
 rsa_params rsa_keygen(unsigned long mod_bits) {
     rsa_params params;
     rsa_private_key ** private = (rsa_private_key **) &params.private;
