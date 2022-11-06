@@ -1,6 +1,6 @@
 #include "cryptopals_rsa.h"
 #include "cryptopals_gmp_private.h"
-#include "cryptopals_md4.h"
+#include "cryptopals_hash.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
