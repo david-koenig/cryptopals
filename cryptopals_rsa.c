@@ -155,7 +155,7 @@ byte_array rsa_unpadded_message_recovery_oracle(rsa_key_pair kp, const byte_arra
     return p_ba;
 }
 
-// According to PKCS1.5 padding rules, a digitally signature
+// According to PKCS1.5 padding rules, a digital signature
 // using MD4 as the digest algorithm will always have the
 // following form before it is encrypted with private key:
 // 0001ff..ff003020300c06082a864886f70d020405000410
