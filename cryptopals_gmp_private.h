@@ -17,3 +17,7 @@ void byte_array_to_mpz(mpz_t out, const byte_array in);
 // Converts mpz_t to byte array in which first byte of array
 // is most significant byte of integer represented by mpz.
 byte_array mpz_to_byte_array(const mpz_t in);
+
+// Hex string is null terminated, but length of byte array
+// does not include null bytes at end
+byte_array mpz_to_hex(const mpz_t in);

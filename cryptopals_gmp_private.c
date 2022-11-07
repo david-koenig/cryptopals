@@ -1,5 +1,6 @@
 #include "cryptopals_gmp_private.h"
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 void byte_array_to_mpz_init(mpz_t out, const byte_array in) {
@@ -29,6 +30,19 @@ byte_array mpz_to_byte_array(const mpz_t in) {
     byte_array out = hex_to_bytes((const char *)hex.bytes);
     free_byte_array(hex);
     return out;
+}
+
+byte_array mpz_to_hex(const mpz_t in) {
+    size_t size_needed = 2 + mpz_sizeinbase(in, 16);
+    byte_array hex = alloc_byte_array(size_needed);
+    size_t len = gmp_snprintf((char *)hex.bytes, size_needed, "%Zx", in);
+    if (len >= size_needed) {
+        fprintf(stderr, "%s: mpz_sizeinbase incorrectly determined size of mpz\n", __func__);
+	free_byte_array(hex);
+	return NO_BA;
+    }
+    hex.len = strlen(hex.bytes);
+    return hex;
 }
 
 void test_conversion_functions(const char * hex) {
