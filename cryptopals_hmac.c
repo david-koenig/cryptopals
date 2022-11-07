@@ -1,5 +1,5 @@
 #include "cryptopals_hmac.h"
-#include "cryptopals_sha256.h"
+#include "cryptopals_hash.h"
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -49,15 +49,15 @@ byte_array hmac_sha256(const byte_array key, const byte_array message) {
         memcpy(k_prime.bytes, key.bytes, key.len);
         my_key = k_prime;
     } else {
-        k_prime = sha256_byte_array_zero_pad(key, SHA256_BLOCK_SIZE);
+        k_prime = sha256(key);
         my_key = k_prime;
     }
 
     byte_array k_xor_ipad = xor_byte_arrays(NO_BA, my_key, sha256_ipad);
-    byte_array inner_hash_out = sha256_2_byte_arrays(k_xor_ipad, message);
+    byte_array inner_hash_out = sha256_cat(k_xor_ipad, message);
 
     byte_array k_xor_opad = xor_byte_arrays(NO_BA, my_key, sha256_opad);
-    byte_array outer_hash_out = sha256_2_byte_arrays(k_xor_opad, inner_hash_out);
+    byte_array outer_hash_out = sha256_cat(k_xor_opad, inner_hash_out);
     
     free_byte_array(k_prime);
     free_byte_array(k_xor_ipad);

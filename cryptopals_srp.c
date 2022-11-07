@@ -1,6 +1,6 @@
 #include "cryptopals_srp.h"
 #include "cryptopals_gmp_private.h"
-#include "cryptopals_sha256.h"
+#include "cryptopals_hash.h"
 #include "cryptopals_hmac.h"
 
 #include <string.h>
@@ -53,7 +53,7 @@ void register_user_server(srp_params * params,
                           const byte_array salt) {
     const byte_array password_ba = {(uint8_t *)password, strlen(password)};
     // x = SHA256(salt|password)
-    byte_array sha_out = sha256_2_byte_arrays(salt, password_ba);
+    byte_array sha_out = sha256_cat(salt, password_ba);
     mpz_t x;
     byte_array_to_mpz_init(x, sha_out);
 
@@ -200,7 +200,7 @@ static void calculate_u_init(mpz_t u, const mpz_t A, const mpz_t B) {
     mpz_init(u);
     byte_array A_bytes = mpz_to_byte_array(A);
     byte_array B_bytes = mpz_to_byte_array(B);
-    byte_array u_bytes = sha256_2_byte_arrays(A_bytes, B_bytes);
+    byte_array u_bytes = sha256_cat(A_bytes, B_bytes);
     byte_array_to_mpz(u, u_bytes);
     free_byte_array(A_bytes);
     free_byte_array(B_bytes);
@@ -210,7 +210,7 @@ static void calculate_u_init(mpz_t u, const mpz_t A, const mpz_t B) {
 // HMAC-SHA256(SHA256(S), salt)
 static byte_array hmac_secret(const mpz_t secret, const byte_array salt) {
     byte_array secret_ba = mpz_to_byte_array(secret);
-    byte_array K = sha256_byte_array(secret_ba);
+    byte_array K = sha256(secret_ba);
     byte_array hmac = hmac_sha256(K, salt);
     free_byte_array(secret_ba);
     free_byte_array(K);
@@ -231,7 +231,7 @@ byte_array calculate_client_hmac(srp_client_session * client,
                                    const char * password) {
     // x = SHA256(salt|password), same as server calculated and threw out
     const byte_array password_ba = {(uint8_t *)password, strlen(password)};
-    byte_array sha_out = sha256_2_byte_arrays(handshake->salt, password_ba);
+    byte_array sha_out = sha256_cat(handshake->salt, password_ba);
     mpz_t x;
     byte_array_to_mpz_init(x, sha_out);
 
@@ -276,7 +276,7 @@ bool hack_client_hmac(const srp_params * params,
                       const char * password_guess) {
     // x = SHA256(password)
     const byte_array password_ba = {(uint8_t *)password_guess, strlen(password_guess)};
-    byte_array sha_pw = sha256_byte_array(password_ba);
+    byte_array sha_pw = sha256(password_ba);
 
     mpz_t x;
     byte_array_to_mpz_init(x, sha_pw);
