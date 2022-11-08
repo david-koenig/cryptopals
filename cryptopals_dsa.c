@@ -3,6 +3,7 @@
 #include "cryptopals_hash.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
 typedef struct dsa_params {
@@ -151,15 +152,42 @@ bool dsa_verify(const dsa_params * params, const dsa_public_key * pub, const byt
     return ret;
 }
 
-static const dsa_public_key * challenge_43_pubkey() {
+//          (s * k) - H(msg)
+//      x = ----------------  mod q
+//                  r
+static void priv_from_k(mpz_t priv, const mpz_t k, const mpz_t r_inv, const mpz_t s, const mpz_t dgst, const mpz_t q) {
+    mpz_mul(priv, s, k);
+    mpz_sub(priv, priv, dgst);
+    mpz_mod(priv, priv, q);
+    mpz_mul(priv, priv, r_inv);
+    mpz_mod(priv, priv, q);
+}
+
+static bool sig_eq(const dsa_sig * sig1, const dsa_sig * sig2) {
+    return !(mpz_cmp(sig1->r, sig2->r) || mpz_cmp(sig1->s, sig2->s));
+}
+
+static const char * pubkeys[] =
+{
+    // challenge 43
+    "84ad4719d044495496a3201c8ff484feb45b962e7302e56a392aee4"
+    "abab3e4bdebf2955b4736012f21a08084056b19bcd7fee56048e004"
+    "e44984e2f411788efdc837a0d2e5abb7b555039fd243ac01f0fb2ed"
+    "1dec568280ce678e931868d23eb095fde9d3779191b8c0299d6e07b"
+    "bb283e6633451e535c45513b2d33c99ea17",
+    // challenge 44
+    "2d026f4bf30195ede3a088da85e398ef869611d0f68f07"
+    "13d51c9c1a3a26c95105d915e2d8cdf26d056b86b8a7b8"
+    "5519b1c23cc3ecdc6062650462e3063bd179c2a6581519"
+    "f674a61f1d89a1fff27171ebc1b93d4dc57bceb7ae2430"
+    "f98a6a4d83d8279ee65d71c1203d2c96d65ebbf7cce9d3"
+    "2971c3de5084cce04a2e147821"
+};
+
+static const dsa_public_key * fixed_pubkey(const char * keystr) {
     dsa_public_key * k;
     k = malloc(sizeof(dsa_public_key));
-    mpz_init_set_str(k->y,
-                     "84ad4719d044495496a3201c8ff484feb45b962e7302e56a392aee4"
-                     "abab3e4bdebf2955b4736012f21a08084056b19bcd7fee56048e004"
-                     "e44984e2f411788efdc837a0d2e5abb7b555039fd243ac01f0fb2ed"
-                     "1dec568280ce678e931868d23eb095fde9d3779191b8c0299d6e07b"
-                     "bb283e6633451e535c45513b2d33c99ea17", 16);
+    mpz_init_set_str(k->y, keystr, 16);
     return k;
 }
 
@@ -171,20 +199,8 @@ static const dsa_sig * challenge_43_sig() {
     return sig;
 }
 
-static bool sig_eq(const dsa_sig * sig1, const dsa_sig * sig2) {
-    return !(mpz_cmp(sig1->r, sig2->r) || mpz_cmp(sig1->s, sig2->s));
-}
-
-static void priv_from_k(mpz_t priv, const mpz_t k, const mpz_t r_inv, const mpz_t s, const mpz_t dgst, const mpz_t q) {
-    mpz_mul(priv, s, k);
-    mpz_sub(priv, priv, dgst);
-    mpz_mod(priv, priv, q);
-    mpz_mul(priv, priv, r_inv);
-    mpz_mod(priv, priv, q);
-}
-
-bool challenge_43_attack() {
-    const dsa_public_key * pub = challenge_43_pubkey();
+bool challenge_43() {
+    const dsa_public_key * pub = fixed_pubkey(pubkeys[0]);
     const dsa_sig * sig = challenge_43_sig();
     const dsa_params * params = dsa_paramgen();
     byte_array msg = cstring_to_bytes(
@@ -237,4 +253,90 @@ bool challenge_43_attack() {
     free_byte_array(msg);
     free_byte_array(digest);
     return success;
+}
+
+bool challenge_44() {
+    struct {
+        char * msg; // ASCII bytes
+        char * s; // DSA sig in decimal
+        char * r; // DSA sig in decimal
+        char * sha1; // SHA1(msg) in hex
+    } data[] = {
+        {
+            "When me rockin' the microphone me rock on steady, ",
+            "277954141006005142760672187124679727147013405915",
+            "228998983350752111397582948403934722619745721541",
+            "21194f72fe39a80c9c20689b8cf6ce9b0e7e52d4"
+        },{
+            "Where me a born in are de one Toronto, so ",
+            "458429062067186207052865988429747640462282138703",
+            "228998983350752111397582948403934722619745721541",
+            "d6340bfcda59b6b75b59ca634813d572de800e8f"
+        }
+    };
+    const dsa_params * params = dsa_paramgen();
+    mpz_t dgst_diff, s_diff, k;
+    mpz_t dgst[2];
+    dsa_sig sig[2];
+    mpz_init(dgst_diff);
+    mpz_init(s_diff);
+    mpz_init(k);
+
+    for (int idx = 0; idx < 2; idx++) {
+        mpz_init_set_str(dgst[idx], data[idx].sha1, 16);
+        mpz_init_set_str(sig[idx].s, data[idx].s, 10);
+        mpz_init_set_str(sig[idx].r, data[idx].r, 10);
+    }
+
+    // Any two signatures that reuse the same nonce have matching r values.
+    // We just need to take any pair with the same r, and then calculate k.
+
+    // H(m1) = k*s1 - xr (mod q)
+    // H(m2) = k*s2 - xr (mod q)
+
+    // Subtracting one equation from the other:
+    // H(m1) - H(m2) = k*(s1 - s2)
+    // k = (H(m1) - H(m2))*inv(s1 - s2)
+    mpz_sub(dgst_diff, dgst[0], dgst[1]);
+    mpz_sub(s_diff, sig[0].s, sig[1].s);
+    mpz_invert(s_diff, s_diff, params->q);
+    mpz_mul(k, dgst_diff, s_diff);
+    mpz_mod(k, k, params->q);
+
+    mpz_t r_inv, priv;
+    mpz_init(priv);
+    mpz_init(r_inv);
+    mpz_invert(r_inv, sig[0].r, params->q);
+    priv_from_k(priv, k, r_inv, sig[0].s, dgst[0], params->q);
+    gmp_printf("Cracked key: %Zx\nSHA1(key): ", priv);
+    byte_array priv_hex = mpz_to_hex(priv);
+    byte_array priv_sha1 = sha1(priv_hex);
+    print_byte_array(priv_sha1);
+
+    free_byte_array(priv_hex);
+    free_byte_array(priv_sha1);
+
+    // We've already cracked the private key without ever calculating or
+    // verifying a signature. We didn't even need the public key. But as a
+    // common-sense check, let's verify that both signatures validate with
+    // the public key, and that we can recalculate the same signatures.
+
+    const dsa_public_key * pub = fixed_pubkey(pubkeys[1]);
+    byte_array msg[2] = {{data[0].msg, strlen(data[0].msg)}, {data[1].msg, strlen(data[1].msg)}};
+    dsa_sig same_sig[2];
+    mpz_t k_inv;
+    mpz_inits(same_sig[0].r, same_sig[0].s, same_sig[1].r, same_sig[1].s, k_inv, (mpz_ptr)NULL);
+    mpz_invert(k_inv, k, params->q);
+    for (int idx = 0 ; idx < 2 ; idx++) {
+        assert(dsa_verify(params, pub, msg[idx], &sig[idx]));
+        calculate_sig(&same_sig[idx], params, priv, dgst[idx], k, k_inv);
+        assert(sig_eq(&sig[idx], &same_sig[idx]));
+    }
+
+    mpz_clears(dgst_diff, s_diff, k, dgst[0], dgst[1], sig[0].r, sig[0].s, sig[1].r, sig[1].s,
+               r_inv, priv, same_sig[0].r, same_sig[0].s, same_sig[1].r, same_sig[1].s, k_inv,
+               (mpz_ptr)NULL);
+    free_dsa_params(params);
+    free_dsa_public_key(pub);
+    return true;
 }

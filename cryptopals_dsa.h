@@ -24,4 +24,5 @@ dsa_key_pair dsa_keygen(const dsa_params *);
 const dsa_sig * dsa_sign(const dsa_params *, const dsa_private_key *, const byte_array);
 bool dsa_verify(const dsa_params *, const dsa_public_key *, const byte_array, const dsa_sig *);
 
-bool challenge_43_attack();
+bool challenge_43();
+bool challenge_44();
