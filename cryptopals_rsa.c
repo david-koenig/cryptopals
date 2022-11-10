@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 typedef struct rsa_private_key {
     mpz_t n; // modulus
@@ -77,6 +78,10 @@ static inline byte_array decrypt_sig(const rsa_public_key * public, const byte_a
     return rsa_encrypt(public, sig);
 }
 
+static inline void encrypt(mpz_t cipher, const rsa_public_key * public, const mpz_t plain) {
+    mpz_powm(cipher, plain, public->e, public->n);
+}
+
 byte_array rsa_decrypt(const rsa_private_key * private, const byte_array cipher) {
     mpz_t mycipher, myplain;
     mpz_init(myplain);
@@ -90,6 +95,16 @@ byte_array rsa_decrypt(const rsa_private_key * private, const byte_array cipher)
 
 static inline byte_array encrypt_sig(const rsa_private_key * private, const byte_array plain) {
     return rsa_decrypt(private, plain);
+}
+
+static bool rsa_parity_oracle(const rsa_private_key * private, mpz_t cipher) {
+    mpz_t plain;
+    mpz_init(plain);
+    mpz_powm(plain, cipher, private->d, private->n);
+
+    bool ret = mpz_odd_p(plain);
+    mpz_clear(plain);
+    return ret;
 }
 
 byte_array rsa_broadcast_attack(const rsa_public_key * public[3], const byte_array cipher[3]) {
@@ -248,4 +263,68 @@ byte_array hack_sig(const rsa_public_key * public, const byte_array msg) {
     free_byte_array(fake_sig);
     free_byte_array(digest);
     return signed_fake_sig;
+}
+
+bool rsa_parity_oracle_attack(bool hollywood) {
+    if (!hollywood) {
+        printf("This takes a little while, so be patient. Or if you want to see a\n");
+        printf("big splash on the screen, add \"hollywood\" to the command line.\n");
+    }
+    rsa_key_pair kp = rsa_keygen(1024);
+    mpf_set_default_prec(1024);
+
+    byte_array plain_txt = base64_to_bytes("VGhhdCdzIHdoeSBJIGZvdW5kIHlvdSBkb24ndCBwbGF5I"
+                                           "GFyb3VuZCB3aXRoIHRoZSBGdW5reSBDb2xkIE1lZGluYQ=="); 
+    mpz_t plain, cipher;
+    byte_array_to_mpz_init(plain, plain_txt);
+    mpz_init(cipher);
+    encrypt(cipher, kp.public, plain);
+
+    mpf_t max, min, diff;
+    mpf_inits(max, min, diff, (mpf_ptr)NULL);
+    mpf_set_z(max, kp.public->n);
+
+    mpz_t enc_two, two, trick_cipher, max_int;
+    mpz_inits(enc_two, two, trick_cipher, max_int, (mpz_ptr)NULL);
+
+    mpz_set_ui(two, 2);
+    encrypt(enc_two, kp.public, two); // encryption of 2, i.e., 2**e mod n
+
+    mpz_set(trick_cipher, cipher); 
+    while (true) {
+        mpf_sub(diff, max, min);
+        if (mpf_cmp_ui(diff, 1) < 0) break;
+
+        mpf_div_ui(diff, diff, 2);
+
+        mpz_mul(trick_cipher, enc_two, trick_cipher); // doubles plaintext
+        if (rsa_parity_oracle(kp.private, trick_cipher)) {
+            mpf_add(min, min, diff);
+        } else {
+            mpf_add(max, min, diff);
+        }
+        if (hollywood) {
+            mpz_set_f(max_int, max);
+            byte_array max_txt = mpz_to_byte_array(max_int);
+            print_byte_array_ascii(max_txt);
+            free_byte_array(max_txt);
+        }
+    }
+
+    mpz_set_f(max_int, max);
+    assert(!mpz_cmp(max_int, plain));
+    printf("Plaintext cracked!\n");
+    if (!hollywood) {
+        byte_array decrypt = mpz_to_byte_array(max_int);
+        print_byte_array_ascii(decrypt);
+        free_byte_array(decrypt);
+    }
+
+    free_rsa_public_key(kp.public);
+    free_rsa_private_key(kp.private);
+    free_byte_array(plain_txt);
+    mpz_clears(plain, cipher, enc_two, two, trick_cipher, max_int, (mpz_ptr)NULL);
+    mpf_clears(max, min, diff, (mpf_ptr)NULL);
+
+    return true;
 }
