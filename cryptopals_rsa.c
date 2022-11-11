@@ -28,7 +28,7 @@ void free_rsa_public_key(const rsa_public_key * public) {
     free(mypublic);
 }
 
-static size_t mpz_sizeinbytes(const mpz_t op) {
+static inline size_t mpz_sizeinbytes(const mpz_t op) {
     size_t x = mpz_sizeinbase(op, 16);
     return (x+1)>>1;
 }
@@ -43,20 +43,17 @@ rsa_key_pair rsa_keygen(unsigned long mod_bits) {
     *public = malloc(sizeof(rsa_public_key));
     mpz_init_set_ui((*public)->e, 3);
     mpz_inits((*public)->n, (*private)->d, (*private)->n, p, q, et, (mpz_ptr)NULL);
-    
     do {
-        mpz_urandomb(p, cryptopals_gmp_randstate, mod_bits);
+        mpz_urandomb(p, cryptopals_gmp_randstate, mod_bits>>1);
         mpz_nextprime(p, p);
-        mpz_urandomb(q, cryptopals_gmp_randstate, mod_bits);
+        mpz_urandomb(q, cryptopals_gmp_randstate, mod_bits>>1);
         mpz_nextprime(q, q);
         mpz_mul((*public)->n, p, q);
-    
         mpz_sub_ui(p, p, 1);
         mpz_sub_ui(q, q, 1);
         mpz_mul(et, p, q);
-        // e must be invertible mod (p-1)(q-1) for encryption/decryption to work and
-        // n must be at least 12 octets for PKCS 1.5 standard (RFC 2313)
-    } while (!mpz_invert((*private)->d, (*public)->e, et) || mpz_sizeinbytes((*public)->n) < 12);
+        // e must be invertible mod (p-1)(q-1) for encryption/decryption to work
+    } while (!mpz_invert((*private)->d, (*public)->e, et));
     mpz_set((*private)->n, (*public)->n);
 
     mpz_clears(p, q, et, (mpz_ptr)NULL);
@@ -97,7 +94,46 @@ static inline byte_array encrypt_sig(const rsa_private_key * private, const byte
     return rsa_decrypt(private, plain);
 }
 
-static bool rsa_parity_oracle(const rsa_private_key * private, mpz_t cipher) {
+// returns true if first two bytes of plaintext are 00 02
+static bool rsa_padding_oracle(const rsa_private_key * private, const mpz_t cipher) {
+    size_t mod_size = mpz_sizeinbytes(private->n);
+    mpz_t plain;
+    mpz_init(plain);
+    mpz_powm(plain, cipher, private->d, private->n);
+    mpz_fdiv_q_2exp(plain, plain, 8*(mod_size-2));
+    bool ret = !mpz_cmp_ui(plain, 2);
+    mpz_clear(plain);
+    return ret;
+}
+
+bool rsa_padding_oracle_test() {
+    int key_sizes[] = {256, 512, 1024, 2048};
+    for (int idx = 0 ; idx < sizeof(key_sizes)/sizeof(int) ; idx++) {
+        int bits = key_sizes[idx];
+        rsa_key_pair kp = rsa_keygen(bits);
+        byte_array plain = alloc_byte_array(bits/8);
+        plain.bytes[1] = 2;
+        mpz_t myplain, mycipher;
+        byte_array_to_mpz_init(myplain, plain);
+        mpz_init(mycipher);
+        encrypt(mycipher, kp.public, myplain);
+        assert(rsa_padding_oracle(kp.private, mycipher));
+
+        plain.bytes[0] = 1;
+        byte_array_to_mpz(myplain, plain);
+        encrypt(mycipher, kp.public, myplain);
+        assert(!rsa_padding_oracle(kp.private, mycipher));
+
+        mpz_clears(myplain, mycipher, (mpz_ptr)NULL);
+        free_byte_array(plain);
+        free_rsa_public_key(kp.public);
+        free_rsa_private_key(kp.private);
+    }
+    printf("tests pass!\n");
+    return true;
+}
+
+static bool rsa_parity_oracle(const rsa_private_key * private, const mpz_t cipher) {
     mpz_t plain;
     mpz_init(plain);
     mpz_powm(plain, cipher, private->d, private->n);
@@ -267,8 +303,7 @@ byte_array hack_sig(const rsa_public_key * public, const byte_array msg) {
 
 bool rsa_parity_oracle_attack(bool hollywood) {
     if (!hollywood) {
-        printf("This takes a little while, so be patient. Or if you want to see a\n");
-        printf("big splash on the screen, add \"hollywood\" to the command line.\n");
+        printf("To see a big splash on the screen, add \"hollywood\" to the command line.\n");
     }
     rsa_key_pair kp = rsa_keygen(1024);
     mpf_set_default_prec(1024);

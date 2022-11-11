@@ -37,3 +37,5 @@ byte_array rsa_unpadded_message_recovery_oracle(rsa_key_pair kp, const byte_arra
 byte_array hack_sig(const rsa_public_key * public, const byte_array msg);
 
 bool rsa_parity_oracle_attack(bool hollywood);
+
+bool rsa_padding_oracle_test();
