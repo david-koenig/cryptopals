@@ -33,7 +33,7 @@ static inline size_t mpz_sizeinbytes(const mpz_t op) {
     return (x+1)>>1;
 }
 
-rsa_key_pair rsa_keygen(unsigned long mod_bits) {
+rsa_key_pair rsa_keygen(unsigned long bits) {
     rsa_key_pair kp;
     rsa_private_key ** private = (rsa_private_key **) &kp.private;
     rsa_public_key ** public = (rsa_public_key **) &kp.public;
@@ -44,16 +44,16 @@ rsa_key_pair rsa_keygen(unsigned long mod_bits) {
     mpz_init_set_ui((*public)->e, 3);
     mpz_inits((*public)->n, (*private)->d, (*private)->n, p, q, et, (mpz_ptr)NULL);
     do {
-        mpz_urandomb(p, cryptopals_gmp_randstate, mod_bits>>1);
+        mpz_urandomb(p, cryptopals_gmp_randstate, bits>>1);
         mpz_nextprime(p, p);
-        mpz_urandomb(q, cryptopals_gmp_randstate, mod_bits>>1);
+        mpz_urandomb(q, cryptopals_gmp_randstate, bits>>1);
         mpz_nextprime(q, q);
         mpz_mul((*public)->n, p, q);
         mpz_sub_ui(p, p, 1);
         mpz_sub_ui(q, q, 1);
         mpz_mul(et, p, q);
         // e must be invertible mod (p-1)(q-1) for encryption/decryption to work
-    } while (!mpz_invert((*private)->d, (*public)->e, et));
+    } while (!mpz_invert((*private)->d, (*public)->e, et) || mpz_sizeinbytes((*public)->n) != bits>>3);
     mpz_set((*private)->n, (*public)->n);
 
     mpz_clears(p, q, et, (mpz_ptr)NULL);
@@ -134,27 +134,36 @@ bool rsa_padding_oracle_test() {
     return true;
 }
 
+// From RFC2313, PKCS#1 version 1.5, section 8.1:
+// The padding string PS shall consist of k-3-||D|| octets. For block
+// type 00, the octets shall have value 00; for block type 01, they
+// shall have value FF; and for block type 02, they shall be
+// pseudorandomly generated and nonzero.
 static byte_array pkcs_1_padding(const byte_array data, size_t len) {
-    if (data.len > len - 4) {
-        fprintf(stderr, "%s: data block too long (%lu bytes) for PKCS 1.5 padding to %lu bits\n", __func__, data.len, len);
+    if (data.len > len - 11) {
+        fprintf(stderr, "%s: data block too long (%lu bytes) for PKCS 1.5 padding to %lu bytes\n", __func__, data.len, len);
         return NO_BA;
     }
     byte_array out = alloc_byte_array(len);
     size_t pad_len = len - data.len - 3;
     out.bytes[1] = 2;
-    memset(out.bytes + 2, 0xff, pad_len);
+    for (size_t idx = 2 ; idx < 2 + pad_len ; ++idx) {
+        out.bytes[idx] = random();
+    }
     memcpy(out.bytes + pad_len + 3, data.bytes, data.len);
     return out;
 }
 
+// Because we're processing data that might not include the leading 00
+// byte, I'm skipping over the first two bytes.
 static byte_array remove_pkcs_1_padding(const byte_array data) {
-    size_t idx = 3;
+    size_t idx = 2;
 
-    if (data.bytes[++idx] != 0xff) {
+    if (!data.bytes[++idx]) {
         fprintf(stderr, "%s: Not PKCS 1 padded\n", __func__);
         return NO_BA;
     }
-    while (idx < data.len - 2 && data.bytes[++idx] == 0xff);
+    while (idx < data.len - 2 && data.bytes[++idx]);
     if (data.bytes[idx++] != 0) {
         fprintf(stderr, "%s: Not PKCS 1 padded\n", __func__);
         return NO_BA;
@@ -163,6 +172,9 @@ static byte_array remove_pkcs_1_padding(const byte_array data) {
 }
 
 static void calculate_highest_interval(mpz_t min, mpz_t max, mpz_t last_min, mpz_t last_max, mpz_t r, const mpz_t s, const mpz_t twoB, const mpz_t threeB, const mpz_t n) {
+    // In step 3 in paper, previous [max, min] is called [a, b].
+    // Here, r is only set to highest value in range, i.e.,
+    // r = (b*s_i-2B)/n = (max*s-twoB)/n
     mpz_mul(r, max, s);
     mpz_sub(r, r, twoB);
     mpz_fdiv_q(r, r, n);
@@ -188,14 +200,23 @@ static void calculate_highest_interval(mpz_t min, mpz_t max, mpz_t last_min, mpz
     if (mpz_cmp(last_max, max) < 0) {
         mpz_set(max, last_max);
     }
-    //gmp_printf("M[%lu] = [%Zx, %Zx]\n", i, min, max);
+    gmp_printf("M = [%Zx, %Zx]\n", min, max);
 }
 
-bool rsa_padding_oracle_attack() {
-    rsa_key_pair kp = rsa_keygen(256);
+bool rsa_padding_oracle_attack(unsigned long bits, const char * msg) {
+    rsa_key_pair kp = rsa_keygen(bits);
     const size_t mod_sz = mpz_sizeinbytes(kp.public->n);
-    byte_array data = cstring_to_bytes("kick it, CC");
+    byte_array data = cstring_to_bytes(msg);
+
+    if (strlen(msg) > mod_sz - 11) {
+        fprintf(stderr, "Data is too long. Max length = key size - 11 bytes\n");
+        free_byte_array(data);
+        free_rsa_public_key(kp.public);
+        free_rsa_private_key(kp.private);
+        return false;
+    }
     byte_array plain = pkcs_1_padding(data, mod_sz);
+    print_byte_array(plain);
     mpz_t twoB, threeB, myplain, mycipher, s, enc_s, min, max, trick_cipher;
     mpz_t ri, last_min, last_max, r, min_s, max_s;
     mpz_inits(ri, r, min_s, max_s, last_min, last_max, (mpz_ptr)NULL);
@@ -218,7 +239,7 @@ bool rsa_padding_oracle_attack() {
     mpz_cdiv_q(s, kp.public->n, threeB);
 
     size_t i = 0;
-    //gmp_printf("s[%lu] = %d\nM[%lu] = [%Zx, %Zx]\n", i, 1, i, min, max);
+    gmp_printf("s[%lu] = %d\nM[%lu] = [%Zx, %Zx]\n", i, 1, i, min, max);
     mpz_init(enc_s);
     mpz_init(trick_cipher);
     do {
@@ -227,7 +248,7 @@ bool rsa_padding_oracle_attack() {
         mpz_mul(trick_cipher, mycipher, enc_s);
     } while(!rsa_padding_oracle(kp.private, trick_cipher));
     i++;
-    //gmp_printf("s[%lu] = %Zx\n", i, s);
+    gmp_printf("s[%lu] = %Zx\n", i, s);
 
     calculate_highest_interval(min, max, last_min, last_max, r, s, twoB, threeB, kp.public->n);
 
@@ -247,7 +268,7 @@ bool rsa_padding_oracle_attack() {
             mpz_add(max_s, max_s, threeB);
             mpz_fdiv_q(max_s, max_s, min);
 
-            //gmp_printf("ri = %Zd\tSearch interval for s[%lu] : [%Zx, %Zx]\n", ri, i, min_s, max_s);
+            gmp_printf("ri = %Zd\tSearch interval for s[%lu] : [%Zx, %Zx]\n", ri, i, min_s, max_s);
 
             for (mpz_set(s, min_s) ; mpz_cmp(s, max_s) <= 0 ; mpz_add_ui(s, s, 1)) {
                 encrypt(enc_s, kp.public, s);
@@ -264,7 +285,7 @@ bool rsa_padding_oracle_attack() {
             printf("Couldn't find s[%lu]\n", i);
             exit(1);
         }
-        //gmp_printf("s[%lu] = %Zx\n", i, s);
+        gmp_printf("s[%lu] = %Zx\n", i, s);
 
         calculate_highest_interval(min, max, last_min, last_max, r, s, twoB, threeB, kp.public->n);
     }

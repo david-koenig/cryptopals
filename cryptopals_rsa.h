@@ -17,7 +17,7 @@ void free_rsa_private_key(const rsa_private_key * private);
 void free_rsa_public_key(const rsa_public_key * public);
 
 // Uses fixed public key e=3, allocates both private and public key.
-rsa_key_pair rsa_keygen(unsigned long mod_bits);
+rsa_key_pair rsa_keygen(unsigned long bits);
 
 byte_array rsa_encrypt(const rsa_public_key * public, const byte_array plain);
 byte_array rsa_decrypt(const rsa_private_key * private, const byte_array cipher);
@@ -39,4 +39,4 @@ byte_array hack_sig(const rsa_public_key * public, const byte_array msg);
 bool rsa_parity_oracle_attack(bool hollywood);
 
 bool rsa_padding_oracle_test();
-bool rsa_padding_oracle_attack();
+bool rsa_padding_oracle_attack(unsigned long bits, const char * msg);
