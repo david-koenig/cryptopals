@@ -111,7 +111,8 @@ bool rsa_padding_oracle_test() {
     for (int idx = 0 ; idx < sizeof(key_sizes)/sizeof(int) ; idx++) {
         int bits = key_sizes[idx];
         rsa_key_pair kp = rsa_keygen(bits);
-        byte_array plain = alloc_byte_array(bits/8);
+        size_t mod_sz = mpz_sizeinbytes(kp.public->n);
+        byte_array plain = alloc_byte_array(mod_sz);
         plain.bytes[1] = 2;
         mpz_t myplain, mycipher;
         byte_array_to_mpz_init(myplain, plain);
@@ -133,11 +134,183 @@ bool rsa_padding_oracle_test() {
     return true;
 }
 
+static byte_array pkcs_1_padding(const byte_array data, size_t len) {
+    if (data.len > len - 4) {
+        fprintf(stderr, "%s: data block too long (%lu bytes) for PKCS 1.5 padding to %lu bits\n", __func__, data.len, len);
+        return NO_BA;
+    }
+    byte_array out = alloc_byte_array(len);
+    size_t pad_len = len - data.len - 3;
+    out.bytes[1] = 2;
+    memset(out.bytes + 2, 0xff, pad_len);
+    memcpy(out.bytes + pad_len + 3, data.bytes, data.len);
+    return out;
+}
+
+static byte_array remove_pkcs_1_padding(const byte_array data) {
+    size_t idx = 3;
+
+    if (data.bytes[++idx] != 0xff) {
+        fprintf(stderr, "%s: Not PKCS 1 padded\n", __func__);
+        return NO_BA;
+    }
+    while (idx < data.len - 2 && data.bytes[++idx] == 0xff);
+    if (data.bytes[idx++] != 0) {
+        fprintf(stderr, "%s: Not PKCS 1 padded\n", __func__);
+        return NO_BA;
+    }
+    return sub_byte_array(data, idx, data.len);
+}
+
+bool rsa_padding_oracle_attack() {
+    rsa_key_pair kp = rsa_keygen(256);
+    const size_t mod_sz = mpz_sizeinbytes(kp.public->n);
+    byte_array data = cstring_to_bytes("kick it, CC");
+    byte_array plain = pkcs_1_padding(data, mod_sz);
+    mpz_t twoB, threeB, myplain, mycipher, s, enc_s, min, max, trick_cipher;
+    mpz_t ri, last_min, last_max, r, min_s, max_s;
+    mpz_inits(ri, r, min_s, max_s, last_min, last_max, (mpz_ptr)NULL);
+
+    byte_array_to_mpz_init(myplain, plain);
+    mpz_init(mycipher);
+    encrypt(mycipher, kp.public, myplain);
+    assert(rsa_padding_oracle(kp.private, mycipher));
+
+    mpz_init_set_ui(twoB, 2);
+    mpz_mul_2exp(twoB, twoB, 8*(mod_sz - 2));
+    mpz_init_set_ui(threeB, 3);
+    mpz_mul_2exp(threeB, threeB, 8*(mod_sz - 2));
+
+    // min = 2B, max = 3B-1, s = ceil(n/3B)
+    mpz_init_set(min, twoB);
+    mpz_init(max);
+    mpz_sub_ui(max, threeB, 1);
+    mpz_init(s);
+    mpz_cdiv_q(s, kp.public->n, threeB);
+
+    size_t i = 0;
+    //gmp_printf("s[%lu] = %d\nM[%lu] = [%Zx, %Zx]\n", i, 1, i, min, max);
+    mpz_init(enc_s);
+    mpz_init(trick_cipher);
+    do {
+        mpz_add_ui(s, s, 1);
+        encrypt(enc_s, kp.public, s);
+        mpz_mul(trick_cipher, mycipher, enc_s);
+    } while(!rsa_padding_oracle(kp.private, trick_cipher));
+    i++;
+    //gmp_printf("s[%lu] = %Zx\n", i, s);
+
+    // just using the highest r value for the highest interval
+    mpz_mul(r, max, s);
+    mpz_sub(r, r, twoB);
+    mpz_fdiv_q(r, r, kp.public->n);
+
+    mpz_set(last_max, max);
+    mpz_set(last_min, min);
+
+    // set both min and max to r*n
+    mpz_mul(min, r, kp.public->n);
+    mpz_set(max, min);
+
+    // min = (2B + r*n)/s or last_min if it was higher
+    mpz_add(min, min, twoB);
+    mpz_cdiv_q(min, min, s);
+    if (mpz_cmp(last_min, min) > 0) {
+        mpz_set(min, last_min);
+    }
+
+    // max = (3B - 1 + r*n)/s or last_max if it was lower
+    mpz_add(max, max, threeB);
+    mpz_sub_ui(max, max, 1);
+    mpz_fdiv_q(max, max, s);
+    if (mpz_cmp(last_max, max) < 0) {
+        mpz_set(max, last_max);
+    }
+    //gmp_printf("M[%lu] = [%Zx, %Zx]\n", i, min, max);
+
+    for (i++ ; mpz_cmp(min, max) < 0 ; i++) {
+        mpz_mul(ri, max, s);
+        mpz_sub(ri, ri, twoB);
+        mpz_mul_2exp(ri, ri, 1);
+        mpz_cdiv_q(ri, ri, kp.public->n);
+        bool success = false;
+        while(true) {
+            mpz_mul(min_s, ri, kp.public->n);
+            mpz_set(max_s, min_s);
+
+            mpz_add(min_s, min_s, twoB);
+            mpz_cdiv_q(min_s, min_s, max);
+
+            mpz_add(max_s, max_s, threeB);
+            mpz_fdiv_q(max_s, max_s, min);
+
+            //gmp_printf("ri = %Zd\tSearch interval for s[%lu] : [%Zx, %Zx]\n", ri, i, min_s, max_s);
+
+            for (mpz_set(s, min_s) ; mpz_cmp(s, max_s) <= 0 ; mpz_add_ui(s, s, 1)) {
+                encrypt(enc_s, kp.public, s);
+                mpz_mul(trick_cipher, mycipher, enc_s);
+                if (rsa_padding_oracle(kp.private, trick_cipher)) {
+                    success = true;
+                    goto BREAK;
+                }
+            }
+            mpz_add_ui(ri, ri, 1);
+        }
+    BREAK:
+        if (!success) {
+            printf("Couldn't find s[%lu]\n", i);
+            exit(1);
+        }
+        //gmp_printf("s[%lu] = %Zx\n", i, s);
+
+        // just using the highest r value for the highest interval
+        mpz_mul(r, max, s);
+        mpz_sub(r, r, twoB);
+        mpz_fdiv_q(r, r, kp.public->n);
+
+        mpz_set(last_max, max);
+        mpz_set(last_min, min);
+
+        mpz_mul(min, r, kp.public->n);
+        mpz_set(max, min);
+
+        mpz_add(min, min, twoB);
+        mpz_cdiv_q(min, min, s);
+        if (mpz_cmp(last_min, min) > 0) {
+            mpz_set(min, last_min);
+        }
+
+        mpz_add(max, max, threeB);
+        mpz_sub_ui(max, max, 1);
+        mpz_fdiv_q(max, max, s);
+        if (mpz_cmp(last_max, max) < 0) {
+            mpz_set(max, last_max);
+        }
+        //gmp_printf("M[%lu] = [%Zx, %Zx]\n", i, min, max);
+    }
+    assert(!mpz_cmp(max, myplain));
+    byte_array cracked = mpz_to_byte_array(max);
+    printf("Cracked plaintext!\n");
+    printf("00"); // the way we convert mpz to byte array the leading zeros get truncated
+    print_byte_array(cracked);
+    byte_array cracked_plain = remove_pkcs_1_padding(cracked);
+    printf("With PKCS 1.5 padding removed and printed in ASCII: ");
+    print_byte_array_ascii(cracked_plain);
+
+    free_byte_array(cracked);
+    free_byte_array(cracked_plain);
+    mpz_clears(twoB, threeB, myplain, mycipher, ri, r, s, enc_s, min_s, max_s, min, max, last_min, last_max, trick_cipher, (mpz_ptr)NULL);
+    free_byte_array(data);
+    free_byte_array(plain);
+    free_rsa_private_key(kp.private);
+    free_rsa_public_key(kp.public);
+    return true;
+}
+
 static bool rsa_parity_oracle(const rsa_private_key * private, const mpz_t cipher) {
     mpz_t plain;
     mpz_init(plain);
     mpz_powm(plain, cipher, private->d, private->n);
-
     bool ret = mpz_odd_p(plain);
     mpz_clear(plain);
     return ret;

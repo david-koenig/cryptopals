@@ -9,7 +9,8 @@ int main(int argc, char ** argv) {
     }
     unsigned int seed =	atoi(argv[1]);
     init_gmp(seed);
-    bool ret = rsa_padding_oracle_test();
+    bool ret = rsa_padding_oracle_attack();
     cleanup_gmp();
     return !ret;
 }
+
