@@ -162,6 +162,35 @@ static byte_array remove_pkcs_1_padding(const byte_array data) {
     return sub_byte_array(data, idx, data.len);
 }
 
+static void calculate_highest_interval(mpz_t min, mpz_t max, mpz_t last_min, mpz_t last_max, mpz_t r, const mpz_t s, const mpz_t twoB, const mpz_t threeB, const mpz_t n) {
+    mpz_mul(r, max, s);
+    mpz_sub(r, r, twoB);
+    mpz_fdiv_q(r, r, n);
+
+    mpz_set(last_max, max);
+    mpz_set(last_min, min);
+
+    // set both min and max to r*n
+    mpz_mul(min, r, n);
+    mpz_set(max, min);
+
+    // min = (2B + r*n)/s or last_min if it was higher
+    mpz_add(min, min, twoB);
+    mpz_cdiv_q(min, min, s);
+    if (mpz_cmp(last_min, min) > 0) {
+        mpz_set(min, last_min);
+    }
+
+    // max = (3B - 1 + r*n)/s or last_max if it was lower
+    mpz_add(max, max, threeB);
+    mpz_sub_ui(max, max, 1);
+    mpz_fdiv_q(max, max, s);
+    if (mpz_cmp(last_max, max) < 0) {
+        mpz_set(max, last_max);
+    }
+    //gmp_printf("M[%lu] = [%Zx, %Zx]\n", i, min, max);
+}
+
 bool rsa_padding_oracle_attack() {
     rsa_key_pair kp = rsa_keygen(256);
     const size_t mod_sz = mpz_sizeinbytes(kp.public->n);
@@ -200,33 +229,7 @@ bool rsa_padding_oracle_attack() {
     i++;
     //gmp_printf("s[%lu] = %Zx\n", i, s);
 
-    // just using the highest r value for the highest interval
-    mpz_mul(r, max, s);
-    mpz_sub(r, r, twoB);
-    mpz_fdiv_q(r, r, kp.public->n);
-
-    mpz_set(last_max, max);
-    mpz_set(last_min, min);
-
-    // set both min and max to r*n
-    mpz_mul(min, r, kp.public->n);
-    mpz_set(max, min);
-
-    // min = (2B + r*n)/s or last_min if it was higher
-    mpz_add(min, min, twoB);
-    mpz_cdiv_q(min, min, s);
-    if (mpz_cmp(last_min, min) > 0) {
-        mpz_set(min, last_min);
-    }
-
-    // max = (3B - 1 + r*n)/s or last_max if it was lower
-    mpz_add(max, max, threeB);
-    mpz_sub_ui(max, max, 1);
-    mpz_fdiv_q(max, max, s);
-    if (mpz_cmp(last_max, max) < 0) {
-        mpz_set(max, last_max);
-    }
-    //gmp_printf("M[%lu] = [%Zx, %Zx]\n", i, min, max);
+    calculate_highest_interval(min, max, last_min, last_max, r, s, twoB, threeB, kp.public->n);
 
     for (i++ ; mpz_cmp(min, max) < 0 ; i++) {
         mpz_mul(ri, max, s);
@@ -263,30 +266,7 @@ bool rsa_padding_oracle_attack() {
         }
         //gmp_printf("s[%lu] = %Zx\n", i, s);
 
-        // just using the highest r value for the highest interval
-        mpz_mul(r, max, s);
-        mpz_sub(r, r, twoB);
-        mpz_fdiv_q(r, r, kp.public->n);
-
-        mpz_set(last_max, max);
-        mpz_set(last_min, min);
-
-        mpz_mul(min, r, kp.public->n);
-        mpz_set(max, min);
-
-        mpz_add(min, min, twoB);
-        mpz_cdiv_q(min, min, s);
-        if (mpz_cmp(last_min, min) > 0) {
-            mpz_set(min, last_min);
-        }
-
-        mpz_add(max, max, threeB);
-        mpz_sub_ui(max, max, 1);
-        mpz_fdiv_q(max, max, s);
-        if (mpz_cmp(last_max, max) < 0) {
-            mpz_set(max, last_max);
-        }
-        //gmp_printf("M[%lu] = [%Zx, %Zx]\n", i, min, max);
+        calculate_highest_interval(min, max, last_min, last_max, r, s, twoB, threeB, kp.public->n);
     }
     assert(!mpz_cmp(max, myplain));
     byte_array cracked = mpz_to_byte_array(max);
