@@ -14,5 +14,8 @@ void cleanup_serverclient();
 // returns request in form message || IV || MAC
 // as long as from and to are user controlled accounts
 byte_array sign_request_iv(request req);
-
 bool verify_request_iv(const byte_array signed_msg);
+
+// this version doesn't use IV, format is message || MAC
+byte_array sign_request(request req);
+bool verify_request(const byte_array signed_msg);
