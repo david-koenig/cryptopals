@@ -238,6 +238,14 @@ byte_array append_three_byte_arrays(const byte_array x, const byte_array y, cons
     return ba;
 }
 
+byte_array join_byte_arrays(const byte_array x, char sep, const byte_array y) {
+    byte_array ba = alloc_byte_array(x.len + y.len + 1);
+    memcpy(ba.bytes, x.bytes, x.len);
+    ba.bytes[x.len] = sep;
+    memcpy(ba.bytes + x.len + 1, y.bytes, y.len);
+    return ba;
+}
+
 bool byte_arrays_equal(const byte_array x, const byte_array y) {
     return x.len == y.len && !memcmp(x.bytes, y.bytes, x.len);
 }

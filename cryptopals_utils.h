@@ -63,6 +63,9 @@ byte_array append_byte_arrays(const byte_array x, const byte_array y);
 // create new byte array which is concatenation of x, y, and z
 byte_array append_three_byte_arrays(const byte_array x, const byte_array y, const byte_array z);
 
+// create new byte array which is concatenation of x, separator character, and y
+byte_array join_byte_arrays(const byte_array x, char sep, const byte_array y);
+
 // true if equal, false if not
 bool byte_arrays_equal(const byte_array x, const byte_array y);
 

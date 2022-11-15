@@ -14,13 +14,13 @@ int main(int argc, char ** argv) {
 
     // I control accounts 213 and 867, so client will sign requests involving
     // those accounts, but I want to steal money from account 777.
-    request good_req = {.from = 213, .to = 867, .amount = 1000000};
-    request bad_req = {.from = 777, .to = 867, .amount = 1000000};
+    request_v1 good_req = {.from = 213, .to = 867, .amount = 1000000};
+    request_v1 bad_req = {.from = 777, .to = 867, .amount = 1000000};
     
-    byte_array signed_msg = sign_request_iv(bad_req);
+    byte_array signed_msg = sign_request_v1(bad_req);
     assert(!signed_msg.bytes);
 
-    signed_msg = sign_request_iv(good_req);
+    signed_msg = sign_request_v1(good_req);
     assert(signed_msg.bytes);
 
     size_t block_size = 16;
@@ -34,13 +34,13 @@ int main(int argc, char ** argv) {
     memcpy(msg_window.bytes, forge_first_block.bytes, forge_first_block.len);
 
     // Does not work because of CBC-MAC check.
-    assert(!verify_request_iv(signed_msg));
+    assert(!verify_request_v1(signed_msg));
     
     // Modify IV accordingly.
     xor_block(iv_window.bytes, iv_window.bytes, xor.bytes, xor.len);
 
     // Jackpot!
-    assert(verify_request_iv(signed_msg));
+    assert(verify_request_v1(signed_msg));
 
     free_byte_array(xor);
     free_byte_array(signed_msg);
