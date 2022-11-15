@@ -217,6 +217,12 @@ byte_array copy_byte_array(const byte_array ba) {
     return sub_byte_array(ba, 0, ba.len);
 }
 
+byte_array append_null_byte(const byte_array x) {
+    byte_array ba = alloc_byte_array(x.len+1);
+    memcpy(ba.bytes, x.bytes, x.len);
+    return ba;
+}
+
 byte_array append_byte_arrays(const byte_array x, const byte_array y) {
     byte_array ba = alloc_byte_array(x.len + y.len);
     memcpy(ba.bytes, x.bytes, x.len);

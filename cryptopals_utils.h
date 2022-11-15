@@ -54,6 +54,9 @@ byte_array sub_byte_array(const byte_array ba, size_t x, size_t y);
 // copy byte array to a new array
 byte_array copy_byte_array(const byte_array ba);
 
+// new byte array with contents of old plus one null byte
+byte_array append_null_byte(const byte_array x);
+
 // create new byte array which is concatenation of x and y
 byte_array append_byte_arrays(const byte_array x, const byte_array y);
 
