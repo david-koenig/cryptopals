@@ -64,27 +64,15 @@ byte_array sign_request_v1(request_v1 req) {
 }
 
 byte_array sign_request_v2(long from, ...) {
-    if (!account_allowed(from)) {
-        return NO_BA;
-    }
     va_list ap;
     va_start(ap, from);
 
     transaction tx = va_arg(ap, transaction);
-    if (!tx.amount || !account_allowed(tx.to)) {
-        va_end(ap);
-        return NO_BA;
-    }
 
     byte_array msg = alloc_byte_array(max_msg_len);
     msg.len = 1+sprintf(msg.bytes, "from=%ld&tx_list=%ld:%ld", from, tx.to, tx.amount);
 
     while (tx = va_arg(ap, transaction), tx.amount) {
-        if (!account_allowed(tx.to)) {
-            free_byte_array(msg);
-            va_end(ap);
-            return NO_BA;
-        }
         byte_array tx_txt = alloc_byte_array(max_tx_len);
         tx_txt.len = 1+sprintf(tx_txt.bytes, "%ld:%ld", tx.to, tx.amount);
         msg.len--; // chop off the null byte
@@ -144,24 +132,54 @@ bool verify_request_v1(const byte_array signed_msg) {
     return ret;
 }
 
-static bool deserialize_req_v2(const byte_array msg) {
-    char *saveptr1, *saveptr2;
-    char * from_s = strtok_r(msg.bytes, "&", &saveptr1);
-    if (!from_s || strncmp(from_s, "from=", strlen("from="))) {
-        return false;
-    }
-    long from = strtol(from_s+strlen("from="), NULL, 10);
+#define MAX_TRANSACTIONS 64
+
+static bool deserialize_req_v2(byte_array msg) {
+    long from;
+    transaction tx[MAX_TRANSACTIONS];
+    size_t num_tx = 0;
+
+    char *equal_ptr, *semicolon_ptr, *colon_ptr;
+    char * tok = msg.bytes;
+    char * end;
+
+    // strtok_r and similar functions were stopping at gibberish bits.
+    // So I implemented tokenizer with memchr which allows this
+    // vulnerability to be exploited. Seems artificial. <shrug>
+    do {
+        end = memchr(tok, '&', msg.bytes + msg.len - (uint8_t *)tok);
+        if (end) *end = 0;
+
+        char *type, *value;
+        type = strtok_r(tok, "=", &equal_ptr);
+        value = strtok_r(NULL, "", &equal_ptr);
+
+        if (type && value) {
+            if (!strcmp(type, "from")) {
+                from = strtol(value, NULL, 10);
+            } else if (!strcmp(type, "tx_list")) {
+                char *tx_str;
+                while (tx_str = strtok_r(value, ";", &semicolon_ptr)) {
+                    value = NULL;
+                    if (num_tx < MAX_TRANSACTIONS) {
+                        char *to_str, *amount_str;
+                        to_str = strtok_r(tx_str, ":", &colon_ptr);
+                        amount_str = strtok_r(NULL, "", &colon_ptr);
+                        if (to_str && amount_str) {
+                            tx[num_tx].to = strtol(to_str, NULL, 10);
+                            tx[num_tx].amount = strtol(amount_str, NULL, 10);
+                            num_tx++;
+                        }
+                    }
+                }
+            }
+        }
+        tok = end+1;
+    } while (end);
+
     printf("Request verified: The following transactions will be sent from account %ld:\n", from);
-    char * tx_txt = strtok_r(NULL, "=", &saveptr1);
-    if (!tx_txt || strcmp(tx_txt, "tx_list")) {
-        return false;
-    }
-    while (tx_txt = strtok_r(NULL, ";", &saveptr1)) {
-        char * to_txt = strtok_r(tx_txt, ":", &saveptr2);
-        long to = strtol(to_txt, NULL, 10);
-        char * amount_txt = strtok_r(NULL, "", &saveptr2);
-        long amount = strtol(amount_txt, NULL, 10);
-        printf("%ld spacebucks to account %ld\n", amount, to);
+    for (size_t idx = 0; idx < num_tx; idx++) {
+        printf("%ld spacebucks to account %ld\n", tx[idx].amount, tx[idx].to);
     }
     return true;
 }
