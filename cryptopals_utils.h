@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 typedef struct byte_array {
     uint8_t * bytes;
@@ -15,6 +16,9 @@ byte_array alloc_byte_array(size_t len);
 
 // Free memory for a byte array
 void free_byte_array(byte_array x);
+
+// Free multiple byte arrays. Use NO_BA to end list.
+void free_byte_arrays(byte_array x, ...);
 
 // Print byte array in hex format
 void print_byte_array(const byte_array x);

@@ -19,6 +19,20 @@ void free_byte_array(byte_array x) {
     }
 }
 
+void free_byte_arrays(byte_array x, ...) {
+    free_byte_array(x);
+    va_list ap;
+    va_start(ap, x);
+    while (true) {
+        byte_array y = va_arg(ap, byte_array);
+        if (y.bytes == NULL) {
+            va_end(ap);
+            return;
+        }
+        free_byte_array(y);
+    }
+}
+
 void print_byte_array(const byte_array x) {
     size_t idx;
     for (idx = 0 ; idx < x.len ; idx++) {

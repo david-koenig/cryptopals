@@ -31,3 +31,6 @@ bool verify_request_v1(const byte_array signed_msg);
 // TX_END as the final argument.
 byte_array sign_request_v2(long from, ...);
 bool verify_request_v2(const byte_array signed_msg);
+
+// uses zero IV
+byte_array cbc_mac(const byte_array plain, const byte_array key);
