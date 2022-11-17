@@ -101,17 +101,7 @@ int main(int argc, char ** argv) {
         
         free_dh_params(initiator_params);
         free_dh_params(responder_params);
-        free_byte_array(message);
-        free_byte_array(initiator_key);
-        free_byte_array(encryption);
-        free_byte_array(hacker_key);
-        free_byte_array(hacker_decryption);
-        free_byte_array(responder_key);
-        free_byte_array(decryption);
-        free_byte_array(message2);
-        free_byte_array(encryption2);
-        free_byte_array(hacker_decryption2);
-        free_byte_array(decryption2);
+        free_byte_arrays(message, initiator_key, encryption, hacker_key, hacker_decryption, responder_key, decryption, message2, encryption2, hacker_decryption2, decryption2, NO_BA);
     }
 
     cleanup_gmp();

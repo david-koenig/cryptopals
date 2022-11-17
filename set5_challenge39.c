@@ -22,9 +22,7 @@ int main(int argc, char ** argv) {
     print_byte_array_ascii(decrypt);
     assert(byte_arrays_equal(plain, decrypt));
     
-    free_byte_array(plain);
-    free_byte_array(cipher);
-    free_byte_array(decrypt);
+    free_byte_arrays(plain, cipher, decrypt, NO_BA);
     free_rsa_private_key(kp.private);
     free_rsa_public_key(kp.public);
     cleanup_gmp();

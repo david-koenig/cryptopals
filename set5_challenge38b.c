@@ -110,8 +110,7 @@ int main(int argc, char ** argv) {
     free_srp_client_handshake(client_handshake);
     free_srp_server_handshake(forged_server_handshake);
 
-    free_byte_array(hmac);
-    free_byte_array(salt);
+    free_byte_arrays(hmac, salt, NO_BA);
     cleanup_gmp();
     cleanup_random_encrypt();
     return password_cracked == false;

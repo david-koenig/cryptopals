@@ -37,8 +37,7 @@ int main(int argc, char ** argv) {
         free_rsa_public_key(public[idx]);
         free_byte_array(cipher[idx]);
     }
-    free_byte_array(cracked_plain);
-    free_byte_array(plain);
+    free_byte_arrays(cracked_plain, plain, NO_BA);
     cleanup_gmp();
     return 0;
 }

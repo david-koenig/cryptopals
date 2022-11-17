@@ -53,13 +53,7 @@ int main(int argc, char ** argv) {
     
     free_dh_params(initiator_params);
     free_dh_params(responder_params);
-    free_byte_array(message);
-    free_byte_array(initiator_key);
-    free_byte_array(encryption);
-    free_byte_array(responder_key);
-    free_byte_array(decryption);
-    free_byte_array(reencryption);
-    free_byte_array(redecryption);
+    free_byte_arrays(message, initiator_key, encryption, responder_key, decryption, reencryption, redecryption, NO_BA);
 
     cleanup_gmp();
     cleanup_random_encrypt();

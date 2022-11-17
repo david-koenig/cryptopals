@@ -19,25 +19,20 @@ int main(int argc, char ** argv) {
                      "bb9ed529077096966d670c354e4abc9804f1746c08ca237327fff"
                      "fffffffffffff", 16);
     mpz_init_set_ui(g, 2);
+    mpz_inits(a, A, b, B, s1, s2, (mpz_ptr)NULL);
 
     // a is a private key and A the public key generated from it.
-    mpz_init(a);
     mpz_urandomm(a, state, p);
-    mpz_init(A);
     // A = (g ** a) mod p
     mpz_powm(A, g, a, p);
     
     // b is a private key and B the public key generated from it.
-    mpz_init(b);
     mpz_urandomm(b, state, p);
-    mpz_init(B);
     // B = (g ** b) mod p
     mpz_powm(B, g, b, p);
 
     // Each side generates the same session key with their private
     // key and the other side's public key.
-    mpz_init(s1);
-    mpz_init(s2);
 
     // s = (B ** a) = (A ** b) mod p
     mpz_powm(s1, B, a, p);
@@ -46,14 +41,7 @@ int main(int argc, char ** argv) {
     assert(!mpz_cmp(s1, s2));
     printf("Shared secret established!\n");
 
-    mpz_clear(p);
-    mpz_clear(g);
-    mpz_clear(a);
-    mpz_clear(A);
-    mpz_clear(b);
-    mpz_clear(B);
-    mpz_clear(s1);
-    mpz_clear(s2);
+    mpz_clears(p, g, a, A, b, B, s1, s2, (mpz_ptr)NULL);
     gmp_randclear(state);
 
     return 0;
