@@ -224,13 +224,8 @@ int main(int argc, char ** argv) {
 
 
     DONE:
-        free_byte_array(iv); iv = NO_BA;
-        free_byte_array(cipher); cipher = NO_BA;
-        free_byte_array(first_block_cipher); first_block_cipher = NO_BA;
-        free_byte_array(spoof_iv); spoof_iv = NO_BA;
-        free_byte_array(spoof); spoof = NO_BA;
-        free_byte_array(plain); plain = NO_BA;
-
+        free_byte_arrays(iv, cipher, first_block_cipher, spoof_iv, spoof, plain, NO_BA);
+        iv = cipher = first_block_cipher = spoof_iv = spoof = plain = NO_BA;
     }
 
     cleanup_random_encrypt();

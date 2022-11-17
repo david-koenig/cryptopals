@@ -33,9 +33,7 @@ int main(int argc, char ** argv) {
         byte_array input = append_byte_arrays(junk, plain);
         cipher = mtc.encrypt(input);
 
-        free_byte_array(junk);
-        free_byte_array(plain);
-        free_byte_array(input);
+        free_byte_arrays(junk, plain, input, NO_BA);
         cleanup_random_encrypt();
     }
     /* We are assuming that attacker does not have access to the mt19937_cipher

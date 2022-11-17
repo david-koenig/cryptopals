@@ -16,9 +16,6 @@ int main(int argc, char ** argv) {
     assert(byte_arrays_equal(cipher, cipher2));
 
     cleanup_openssl();
-    free_byte_array(key);
-    free_byte_array(cipher);
-    free_byte_array(cipher2);
-    free_byte_array(plain);
+    free_byte_arrays(key, cipher, cipher2, plain, NO_BA);
     return 0;
 }
