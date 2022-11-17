@@ -18,6 +18,7 @@ int main(int argc, char ** argv) {
         } else {
             assert(!unpadded.bytes);
         }
+        free_byte_arrays(ba, unpadded, NO_BA);
     }
     printf("All tests passed!\n");
     return 0;

@@ -46,8 +46,7 @@ int main(int argc, char ** argv) {
         }
     }
 
-    free_byte_array(long_plain);
-    free_byte_array(long_cipher);
+    free_byte_arrays(long_plain, long_cipher, NO_BA);
     cleanup_random_encrypt();
     return 0;
 }

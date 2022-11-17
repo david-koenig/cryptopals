@@ -96,9 +96,7 @@ int main(int argc, char ** argv) {
     auto profile = decrypt_profile(cipherC);
     print_map(profile);
 
-    free_byte_array(cipherA);
-    free_byte_array(cipherB);
-    free_byte_array(cipherC);
+    free_byte_arrays(cipherA, cipherB, cipherC, NO_BA);
     cleanup_random_encrypt();
     return 0;
 }

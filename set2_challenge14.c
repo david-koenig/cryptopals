@@ -15,15 +15,13 @@ bool find_repeated_block(size_t * matching_block_idx_p, size_t * unused_len_p, s
         for (matching_block_idx = 0 ; matching_block_idx < cipher.len / block_size - 1 ; ++matching_block_idx) {
             if (!memcmp(cipher.bytes + block_size * matching_block_idx, cipher.bytes + block_size * (matching_block_idx + 1), block_size)) {
                 printf("%s: First encryption with matching blocks: input len: %li, first matching block: %li\n", __func__, plain_len, matching_block_idx);
-                free_byte_array(plain);
-                free_byte_array(cipher);
+                free_byte_arrays(plain, cipher, NO_BA);
                 *matching_block_idx_p = matching_block_idx;
                 *unused_len_p = plain_len % block_size;
                 return true;
             }
         }
-        free_byte_array(plain);
-        free_byte_array(cipher);
+        free_byte_arrays(plain, cipher, NO_BA);
         if (plain_len >= block_size * 3) {
             printf("%s: No matching blocks found. Possibly not ECB.\n", __func__);
             return false;

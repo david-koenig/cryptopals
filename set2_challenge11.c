@@ -22,8 +22,7 @@ int main(int argc, char ** argv) {
         printf("ECB mode!\n");
     }
 
-    free_byte_array(plain);
-    free_byte_array(cipher);
+    free_byte_arrays(plain, cipher, NO_BA);
     cleanup_random_encrypt();
     return 0;
 }

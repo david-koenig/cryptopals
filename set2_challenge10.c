@@ -28,10 +28,6 @@ int main(int argc, char **argv)
     }
 
     cleanup_openssl();
-    free_byte_array(cipher);
-    free_byte_array(key);
-    free_byte_array(iv);
-    free_byte_array(plaintext);
-    free_byte_array(cipher2);
+    free_byte_arrays(cipher, key, iv, plaintext, cipher2, NO_BA);
     return ret;
 }
