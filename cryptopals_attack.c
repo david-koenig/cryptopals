@@ -15,8 +15,7 @@ bool find_block_size(size_t * block_size_p, size_t * unknown_len_p, uint8_t fill
         byte_array cipher = encrypt(plain);
         cipher_len = cipher.len;
         printf("%s: encryption using fill of '%c': input len = %li, output len = %li\n", __func__, fill_c, plain_len, cipher_len);
-        free_byte_array(plain);
-        free_byte_array(cipher);
+        free_byte_arrays(plain, cipher, NO_BA);
         ++plain_len;
         if (plain_len > MAX_PLAIN_LEN) {
             printf("%s: no change in cipher length up to %li characters. test failed\n", __func__, MAX_PLAIN_LEN);
@@ -45,20 +44,15 @@ bool recover_bytes(size_t target_len, uint8_t fill_c, size_t unused_len, size_t 
 
         if (!recover_byte(cipher, matching_block_idx + target_idx / block_size, spoof, matching_block_idx, block_size, encrypt)) {
             printf("%s: Unable to recover byte %li!\n", __func__, target_idx);
-            free_byte_array(plain);
-            free_byte_array(cipher);
-            free_byte_array(spoof);
-            free_byte_array(recovered_target);
+            free_byte_arrays(plain, cipher, spoof, recovered_target, NO_BA);
             return false;
         }
         recovered_target.bytes[target_idx] = spoof.bytes[spoof.len - 1];
-        free_byte_array(plain);
-        free_byte_array(cipher);
+        free_byte_arrays(plain, cipher, NO_BA);
     }
     printf("%s: Recovered target string:\n", __func__);
     print_byte_array_ascii(recovered_target);
-    free_byte_array(spoof);
-    free_byte_array(recovered_target);
+    free_byte_arrays(spoof, recovered_target, NO_BA);
     return true;
 }
 

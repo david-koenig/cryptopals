@@ -359,8 +359,7 @@ SUCCESS:
     printf("With PKCS 1.5 padding removed and printed in ASCII: ");
     print_byte_array_ascii(cracked_plain);
 
-    free_byte_array(cracked);
-    free_byte_array(cracked_plain);
+    free_byte_arrays(cracked, cracked_plain, NO_BA);
     for (size_t idx = 0 ; idx < MAX_INTERVALS ; ++idx) {
         mpz_clear(M[0][idx].min);
         mpz_clear(M[0][idx].max);
@@ -368,8 +367,7 @@ SUCCESS:
         mpz_clear(M[1][idx].max);
     }
     mpz_clears(n, twoB, threeB, min, max, min_r, max_r, r, myplain, mycipher, ri, s, enc_s, min_s, max_s, trick_cipher, (mpz_ptr)NULL);
-    free_byte_array(data);
-    free_byte_array(plain);
+    free_byte_arrays(data, plain, NO_BA);
     free_rsa_private_key(kp.private);
     free_rsa_public_key(kp.public);
     return true;
@@ -442,8 +440,7 @@ byte_array rsa_unpadded_message_recovery_oracle(rsa_key_pair kp, const byte_arra
     byte_array p_ba = mpz_to_byte_array(p);
 
     mpz_clears(s, s_inv, c, p, c_prime, p_prime, (mpz_ptr)NULL);
-    free_byte_array(c_prime_ba);
-    free_byte_array(p_prime_ba);
+    free_byte_arrays(c_prime_ba, p_prime_ba, NO_BA);
     return p_ba;
 }
 
@@ -479,9 +476,7 @@ byte_array rsa_md4_sign_msg(const rsa_private_key * private, const byte_array ms
     byte_array padded_digest = append_three_byte_arrays(padding, rsa_md4_asn1, digest);
     byte_array sig = encrypt_sig(private, padded_digest);
 
-    free_byte_array(digest);
-    free_byte_array(padding);
-    free_byte_array(padded_digest);
+    free_byte_arrays(digest, padding, padded_digest, NO_BA);
     return sig;
 }
 
@@ -511,8 +506,7 @@ bool rsa_md4_verify_sig(const rsa_public_key * public, const byte_array msg, con
 
     ret = byte_arrays_equal(decrypted_dgst, digest);
 OUT:
-    free_byte_array(digest);
-    free_byte_array(decrypted_sig);
+    free_byte_arrays(digest, decrypted_sig, NO_BA);
     return ret;
 }
 
@@ -537,8 +531,7 @@ byte_array hack_sig(const rsa_public_key * public, const byte_array msg) {
 
     byte_array signed_fake_sig = mpz_to_byte_array(signed_fake);
     mpz_clears(fake, signed_fake, (mpz_ptr)NULL);
-    free_byte_array(fake_sig);
-    free_byte_array(digest);
+    free_byte_arrays(fake_sig, digest, NO_BA);
     return signed_fake_sig;
 }
 

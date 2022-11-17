@@ -122,9 +122,7 @@ int main(int argc, char ** argv) {
         free_dsa_sig(magic_sig2);
     }
 
-    free_byte_array(msg);
-    free_byte_array(msg2);
-    
+    free_byte_arrays(msg, msg2, NO_BA);
     cleanup_gmp();
     return 0;
 }

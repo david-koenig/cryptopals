@@ -25,10 +25,8 @@ char * get_shared_secret_bytes(const dh_params params) {
 }
 
 void free_dh_params(dh_params params) {
-    mpz_clear(params.public->p);
-    mpz_clear(params.public->g);
-    mpz_clear(params.public->key);
-    mpz_clear(params.private->key);
+    mpz_clears(params.public->p, params.public->g, params.public->key,
+               params.private->key, (mpz_ptr)NULL);
     free_byte_array(params.private->shared_secret);
     free(params.public);
     free(params.private);
@@ -79,9 +77,7 @@ dh_public_params * hacked_params(const char * p_hex_str, unsigned int g) {
 }
 
 void free_hacked_params(dh_public_params * public) {
-    mpz_clear(public->key);
-    mpz_clear(public->p);
-    mpz_clear(public->g);
+    mpz_clears(public->key, public->p, public->g, (mpz_ptr)NULL);
     free(public);
 }
 

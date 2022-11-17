@@ -58,8 +58,7 @@ void test_conversion_functions(const char * hex) {
     gmp_printf("%-11s = %Zx\n", "back to mpz", copy);
     assert(!mpz_cmp(in, copy));
     printf("tests passed!\n");
-    mpz_clear(in);
-    mpz_clear(copy);
+    mpz_clears(in, copy, (mpz_ptr)NULL);
     free_byte_array(bytes);
 }
 

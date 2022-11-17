@@ -23,12 +23,8 @@ typedef struct srp_params {
 } srp_params;
 
 void free_srp_params(srp_params * params) {
-    mpz_clear(params->N);
-    mpz_clear(params->g);
-    mpz_clear(params->k);
-    mpz_clear(params->server.v);
-    free_byte_array(params->server.email);
-    free_byte_array(params->server.salt);
+    mpz_clears(params->N, params->g, params->k, params->server.v, (mpz_ptr)NULL);
+    free_byte_arrays(params->server.email, params->server.salt, NO_BA);
     free(params);
 }
 
@@ -128,8 +124,7 @@ srp_client_handshake * forge_client_handshake(const char * A_hex,
 }
 
 void free_srp_client_session(srp_client_session * client) {
-    mpz_clear(client->a);
-    mpz_clear(client->A);
+    mpz_clears(client->a, client->A, (mpz_ptr)NULL);
     free(client);
 }
 
@@ -148,8 +143,7 @@ srp_server_handshake * receive_client_handshake(srp_server_session ** server,
     }
     srp_server_session * my_server = malloc(sizeof(srp_server_session));
     mpz_init_set(my_server->A, handshake->A);
-    mpz_init(my_server->B);
-    mpz_init(my_server->b);
+    mpz_inits(my_server->B, my_server->b, (mpz_ptr)NULL);
 
     mpz_urandomm(my_server->b, cryptopals_gmp_randstate, params->N);
 
@@ -179,9 +173,7 @@ srp_server_handshake * forge_server_handshake(unsigned int B,
 }
 
 void free_srp_server_session(srp_server_session * server) {
-    mpz_clear(server->A);
-    mpz_clear(server->B);
-    mpz_clear(server->b);
+    mpz_clears(server->A, server->B, server->b, (mpz_ptr)NULL);
     free(server);
 }
 
@@ -202,9 +194,7 @@ static void calculate_u_init(mpz_t u, const mpz_t A, const mpz_t B) {
     byte_array B_bytes = mpz_to_byte_array(B);
     byte_array u_bytes = sha256_cat(A_bytes, B_bytes);
     byte_array_to_mpz(u, u_bytes);
-    free_byte_array(A_bytes);
-    free_byte_array(B_bytes);
-    free_byte_array(u_bytes);
+    free_byte_arrays(A_bytes, B_bytes, u_bytes, NO_BA);
 }
 
 // HMAC-SHA256(SHA256(S), salt)
@@ -212,8 +202,7 @@ static byte_array hmac_secret(const mpz_t secret, const byte_array salt) {
     byte_array secret_ba = mpz_to_byte_array(secret);
     byte_array K = sha256(secret_ba);
     byte_array hmac = hmac_sha256(K, salt);
-    free_byte_array(secret_ba);
-    free_byte_array(K);
+    free_byte_arrays(secret_ba, K, NO_BA);
     return hmac;
 }
 
@@ -226,9 +215,9 @@ byte_array forge_hmac(const char * secret_hex, const byte_array salt) {
 }
 
 byte_array calculate_client_hmac(srp_client_session * client,
-                                   const srp_params * params,
-                                   const srp_server_handshake * handshake,
-                                   const char * password) {
+                                 const srp_params * params,
+                                 const srp_server_handshake * handshake,
+                                 const char * password) {
     // x = SHA256(salt|password), same as server calculated and threw out
     const byte_array password_ba = {(uint8_t *)password, strlen(password)};
     byte_array sha_out = sha256_cat(handshake->salt, password_ba);
@@ -258,11 +247,7 @@ byte_array calculate_client_hmac(srp_client_session * client,
     // S = (B - k * g**x) ** (a + u * x) mod N
     mpz_powm(S, base, exponent, params->N);
 
-    mpz_clear(x);
-    mpz_clear(u);
-    mpz_clear(exponent);
-    mpz_clear(temp);
-    mpz_clear(base);
+    mpz_clears(x, u, exponent, temp, base, (mpz_ptr)NULL);
     free_byte_array(sha_out);
 
     byte_array hmac = hmac_secret(S, handshake->salt);
@@ -301,12 +286,8 @@ bool hack_client_hmac(const srp_params * params,
     byte_array hmac_guess = hmac_secret(S, empty);
     bool ret = byte_arrays_equal(client_hmac, hmac_guess);
 
-    mpz_clear(x);
-    mpz_clear(u);
-    mpz_clear(v);
-    mpz_clear(S);
-    free_byte_array(hmac_guess);
-    free_byte_array(sha_pw);
+    mpz_clears(x, u, v, S, (mpz_ptr)NULL);
+    free_byte_arrays(hmac_guess, sha_pw, NO_BA);
 
     return ret;
 }
@@ -327,8 +308,7 @@ static void calculate_server_shared_secret_init(mpz_t S,
     mpz_init(S);
     mpz_powm(S, base, server->b, params->N);
 
-    mpz_clear(u);
-    mpz_clear(base);
+    mpz_clears(u, base, (mpz_ptr)NULL);
 }
 
 bool validate_client_hmac(const srp_server_session * server,

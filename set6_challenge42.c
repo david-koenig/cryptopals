@@ -22,9 +22,7 @@ int main(int argc, char ** argv) {
     assert(rsa_md4_verify_sig(kp.public, msg, fake_sig));
     printf("Fake signature verified!\n");
 
-    free_byte_array(msg);
-    free_byte_array(sig);
-    free_byte_array(fake_sig);
+    free_byte_arrays(msg, sig, fake_sig, NO_BA);
     free_rsa_private_key(kp.private);
     free_rsa_public_key(kp.public);
     cleanup_gmp();

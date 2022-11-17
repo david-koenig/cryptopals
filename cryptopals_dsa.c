@@ -265,8 +265,7 @@ bool challenge_43() {
     free_dsa_public_key(pub);
     free_dsa_sig(sig_guess);
     free_dsa_sig(sig);
-    free_byte_array(msg);
-    free_byte_array(digest);
+    free_byte_arrays(msg, digest, NO_BA);
     return success;
 }
 
@@ -328,8 +327,7 @@ bool challenge_44() {
     byte_array priv_sha1 = sha1(priv_hex);
     print_byte_array(priv_sha1);
 
-    free_byte_array(priv_hex);
-    free_byte_array(priv_sha1);
+    free_byte_arrays(priv_hex, priv_sha1, NO_BA);
 
     // We've already cracked the private key without ever calculating or
     // verifying a signature. We didn't even need the public key. But as a
