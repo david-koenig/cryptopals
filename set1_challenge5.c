@@ -13,8 +13,6 @@ int main(int argc, char** argv) {
     byte_array cipher = repeating_byte_xor(plaintext, repeating_key);
     print_byte_array(cipher);
 
-    free_byte_array(plaintext);
-    free_byte_array(repeating_key);
-    free_byte_array(cipher);
+    free_byte_arrays(plaintext, repeating_key, cipher, NO_BA);
     return 0;
 }

@@ -11,9 +11,7 @@ int main(int argc, char** argv) {
     byte_array z = xor_byte_arrays(NO_BA, x, y);
     print_byte_array(z);
 
-    free_byte_array(x);
-    free_byte_array(y);
-    free_byte_array(z);
+    free_byte_arrays(x, y, z, NO_BA);
     return 0;
 }
 

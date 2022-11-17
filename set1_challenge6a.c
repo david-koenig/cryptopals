@@ -18,8 +18,7 @@ int main(int argc, char** argv) {
             byte_array cipher0 = sub_byte_array(cipher, 2*interval_idx*key_width, (2*interval_idx+1)*key_width);
             byte_array cipher1 = sub_byte_array(cipher, (2*interval_idx+1)*key_width, (2*interval_idx+2)*key_width);
             hamming_score += hamming_distance(cipher0, cipher1);
-            free_byte_array(cipher0);
-            free_byte_array(cipher1);
+            free_byte_arrays(cipher0, cipher1, NO_BA);
         }
         float score = hamming_score / (float) ( key_width * num_intervals);
         printf("key_width = %li\tscore = %f\n", key_width, score);

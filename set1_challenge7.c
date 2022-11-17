@@ -16,8 +16,6 @@ int main(int argc, char **argv)
     print_byte_array_ascii(plaintext);
 
     cleanup_openssl();
-    free_byte_array(cipher);
-    free_byte_array(plaintext);
-    free_byte_array(key);
+    free_byte_arrays(cipher, plaintext, key, NO_BA);
     return 0;
 }
