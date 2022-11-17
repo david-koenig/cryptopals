@@ -59,11 +59,7 @@ byte_array hmac_sha256(const byte_array key, const byte_array message) {
     byte_array k_xor_opad = xor_byte_arrays(NO_BA, my_key, sha256_opad);
     byte_array outer_hash_out = sha256_cat(k_xor_opad, inner_hash_out);
     
-    free_byte_array(k_prime);
-    free_byte_array(k_xor_ipad);
-    free_byte_array(inner_hash_out);
-    free_byte_array(k_xor_opad);
-
+    free_byte_arrays(k_prime, k_xor_ipad, inner_hash_out, k_xor_opad, NO_BA);
     return outer_hash_out;
 }
 
@@ -94,16 +90,7 @@ void test_hmac_sha256() {
     assert(byte_arrays_equal(hmac3, hmac_answer3));
     printf("SHA256-HMAC tests pass!\n");
 
-    free_byte_array(key1);
-    free_byte_array(message1);
-    free_byte_array(hmac_answer1);
-    free_byte_array(hmac1);
-    free_byte_array(key2);
-    free_byte_array(message2);
-    free_byte_array(hmac_answer2);
-    free_byte_array(hmac2);
-    free_byte_array(key3);
-    free_byte_array(message3);
-    free_byte_array(hmac_answer3);
-    free_byte_array(hmac3);
+    free_byte_arrays(key1, message1, hmac_answer1, hmac1,
+                     key2, message2, hmac_answer2, hmac2,
+                     key3, message3, hmac_answer3, hmac3, NO_BA);
 }

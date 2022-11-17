@@ -46,8 +46,7 @@ void free_dsa_public_key(const dsa_public_key * key) {
 
 void free_dsa_sig(const dsa_sig * sig) {
     dsa_sig * s = (dsa_sig *)sig;
-    mpz_clear(s->r);
-    mpz_clear(s->s);
+    mpz_clears(s->r, s->s, (mpz_ptr)NULL);
     free(s);
 }
 
@@ -235,8 +234,7 @@ bool challenge_43() {
     mpz_invert(r_inv, sig->r, params->q);
 
     dsa_sig * sig_guess = malloc(sizeof(dsa_sig));
-    mpz_init(sig_guess->r);
-    mpz_init(sig_guess->s);
+    mpz_inits(sig_guess->r, sig_guess->s, (mpz_ptr)NULL);
 
     bool success = false;
     for (mpz_init_set_ui(k, 1) ; mpz_cmp_ui(k, 1UL<<16) < 0 ; mpz_add_ui(k, k, 1)) {
@@ -252,8 +250,7 @@ bool challenge_43() {
             byte_array priv_hex = mpz_to_hex(priv);
             byte_array priv_sha1 = sha1(priv_hex);
             print_byte_array(priv_sha1);
-            free_byte_array(priv_hex);
-            free_byte_array(priv_sha1);
+            free_byte_arrays(priv_hex, priv_sha1, NO_BA);
             success = true;
         }
     }
@@ -292,9 +289,7 @@ bool challenge_44() {
     mpz_t dgst_diff, s_diff, k;
     mpz_t dgst[2];
     dsa_sig sig[2];
-    mpz_init(dgst_diff);
-    mpz_init(s_diff);
-    mpz_init(k);
+    mpz_inits(dgst_diff, s_diff, k, (mpz_ptr)NULL);
 
     for (int idx = 0; idx < 2; idx++) {
         mpz_init_set_str(dgst[idx], data[idx].sha1, 16);
@@ -318,8 +313,7 @@ bool challenge_44() {
     mpz_mod(k, k, params->q);
 
     mpz_t r_inv, priv;
-    mpz_init(priv);
-    mpz_init(r_inv);
+    mpz_inits(priv, r_inv, (mpz_ptr)NULL);
     mpz_invert(r_inv, sig[0].r, params->q);
     priv_from_k(priv, k, r_inv, sig[0].s, dgst[0], params->q);
     gmp_printf("Cracked key: %Zx\nSHA1(key): ", priv);

@@ -57,9 +57,7 @@ byte_array sign_request_v1(request_v1 req) {
     byte_array iv = random_128_bits();
     byte_array mac = cbc_mac_iv(msg, K, iv);
     byte_array signed_msg = append_three_byte_arrays(msg, iv, mac);
-    free_byte_array(msg);
-    free_byte_array(iv);
-    free_byte_array(mac);
+    free_byte_arrays(msg, iv, mac, NO_BA);
     return signed_msg;
 }
 
@@ -77,14 +75,12 @@ byte_array sign_request_v2(long from, ...) {
         tx_txt.len = 1+sprintf(tx_txt.bytes, "%ld:%ld", tx.to, tx.amount);
         msg.len--; // chop off the null byte
         byte_array join = join_byte_arrays(msg, ';', tx_txt);
-        free_byte_array(tx_txt);
-        free_byte_array(msg);
+        free_byte_arrays(tx_txt, msg, NO_BA);
         msg = join;
     }
     byte_array mac = cbc_mac(msg, K);
     byte_array signed_msg = append_byte_arrays(msg, mac);
-    free_byte_array(msg);
-    free_byte_array(mac);
+    free_byte_arrays(msg, mac, NO_BA);
     va_end(ap);
     return signed_msg;
 }
@@ -125,10 +121,7 @@ bool verify_request_v1(const byte_array signed_msg) {
                    req.amount, req.from, req.to);
         }
     }
-    free_byte_array(mac2);
-    free_byte_array(msg);
-    free_byte_array(iv);
-    free_byte_array(mac);
+    free_byte_arrays(mac2, msg, iv, mac, NO_BA);
     return ret;
 }
 
@@ -196,8 +189,6 @@ bool verify_request_v2(const byte_array signed_msg) {
     if (ret) {
         ret = deserialize_req_v2(msg);
     }
-    free_byte_array(mac2);
-    free_byte_array(msg);
-    free_byte_array(mac);
+    free_byte_arrays(mac2, msg, mac, NO_BA);
     return ret;
 }

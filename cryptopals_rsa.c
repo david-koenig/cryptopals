@@ -271,10 +271,7 @@ bool rsa_padding_oracle_attack(unsigned long bits, const char * msg) {
     interval * M[2] = {M0, M1};
     size_t M_sz[2] = {1, 0};
     for (size_t idx = 0 ; idx < MAX_INTERVALS ; ++idx) {
-        mpz_init(M0[idx].min);
-        mpz_init(M0[idx].max);
-        mpz_init(M1[idx].min);
-        mpz_init(M1[idx].max);
+        mpz_inits(M0[idx].min, M0[idx].max, M1[idx].min, M1[idx].max, (mpz_ptr)NULL);
     }
 
     // allocating globals to be used as locals in other functions
@@ -361,10 +358,7 @@ SUCCESS:
 
     free_byte_arrays(cracked, cracked_plain, NO_BA);
     for (size_t idx = 0 ; idx < MAX_INTERVALS ; ++idx) {
-        mpz_clear(M[0][idx].min);
-        mpz_clear(M[0][idx].max);
-        mpz_clear(M[1][idx].min);
-        mpz_clear(M[1][idx].max);
+        mpz_clears(M[0][idx].min, M[0][idx].max, M[1][idx].min, M[1][idx].max, (mpz_ptr)NULL);
     }
     mpz_clears(n, twoB, threeB, min, max, min_r, max_r, r, myplain, mycipher, ri, s, enc_s, min_s, max_s, trick_cipher, (mpz_ptr)NULL);
     free_byte_arrays(data, plain, NO_BA);

@@ -358,8 +358,7 @@ byte_array base64_file_to_bytes(const char * filename) {
 
         old_ba = ba;
         ba = append_byte_arrays(old_ba, ba_line);
-        free_byte_array(old_ba);
-        free_byte_array(ba_line);
+        free_byte_arrays(old_ba, ba_line, NO_BA);
     }
     fclose(f);
     return ba;

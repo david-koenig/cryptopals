@@ -42,8 +42,7 @@ int main(int argc, char ** argv) {
     // Jackpot!
     assert(verify_request_v1(signed_msg));
 
-    free_byte_array(xor);
-    free_byte_array(signed_msg);
+    free_byte_arrays(xor, signed_msg, NO_BA);
     cleanup_serverclient();
     return 0;
 }

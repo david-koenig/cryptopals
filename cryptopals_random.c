@@ -49,10 +49,7 @@ void cleanup_random_encrypt() {
         free_byte_array(padding_oracle_plaintext[idx]);
     }
     free(padding_oracle_plaintext);
-    free_byte_array(key);
-    free_byte_array(iv);
-    free_byte_array(unknown);
-    free_byte_array(junk);
+    free_byte_arrays(key, iv, unknown, junk, NO_BA);
     cleanup_openssl();
 }
 
@@ -91,8 +88,7 @@ byte_array random_encrypt(const byte_array plain) {
     byte_array appended_bytes = sub_byte_array(junk, 0, num_appended_bytes);
 
     byte_array appended_plain = append_three_byte_arrays(prepended_bytes, plain, appended_bytes);
-    free_byte_array(prepended_bytes);
-    free_byte_array(appended_bytes);
+    free_byte_arrays(prepended_bytes, appended_bytes, NO_BA);
 
     byte_array cipher;
     if (junk.bytes[15]&1) {
@@ -102,9 +98,7 @@ byte_array random_encrypt(const byte_array plain) {
         cipher = encrypt_aes_128_cbc(appended_plain, key, iv);
         free_byte_array(iv);
     }
-    free_byte_array(junk);
-    free_byte_array(key);
-    free_byte_array(appended_plain);
+    free_byte_arrays(junk, key, appended_plain, NO_BA);
     return cipher;
 }
 
@@ -181,8 +175,7 @@ byte_array encrypt_aes_128_cbc_prepend_iv(const byte_array plaintext, const byte
     byte_array iv = random_128_bits();
     byte_array cipher = encrypt_aes_128_cbc(plaintext, key, iv);
     byte_array encryption = append_byte_arrays(iv, cipher);
-    free_byte_array(iv);
-    free_byte_array(cipher);
+    free_byte_arrays(iv, cipher, NO_BA);
     return encryption;
 }
 

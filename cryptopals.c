@@ -30,8 +30,7 @@ void score_single_byte_xor(const byte_array cipher, bool print_plain) {
         }
         key_byte++;
     } while (key_byte);
-    free_byte_array(key);
-    free_byte_array(plain);
+    free_byte_arrays(key, plain, NO_BA);
 }
 
 byte_array repeating_byte_xor(const byte_array ba, const byte_array repeating_key) {
@@ -252,9 +251,7 @@ byte_array encrypt_aes_128_cbc(const byte_array plaintext, const byte_array key,
     }
 
 OUT:
-    free_byte_array(padded_plaintext);
-    free_byte_array(input_block);
-    free_byte_array(output_block);
+    free_byte_arrays(padded_plaintext, input_block, output_block, NO_BA);
     return cipher;
 }
 
@@ -389,7 +386,6 @@ byte_array edit_ciphertext_aes_128_ctr(const byte_array cipher, const byte_array
     for (new_plain_idx = 0; new_plain_idx <= new_plain.len ; ++new_plain_idx) {
         new_cipher.bytes[offset + new_plain_idx] = new_plain.bytes[new_plain_idx] ^ key_stream_out.bytes[skip_bytes + new_plain_idx];
     }
-    free_byte_array(key_stream_in);
-    free_byte_array(key_stream_out);
+    free_byte_arrays(key_stream_in, key_stream_out, NO_BA);
     return new_cipher;
 }

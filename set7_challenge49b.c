@@ -57,10 +57,6 @@ int main(int argc, char ** argv) {
     printf("\nI hacked them together to make this successful request:\n");
     assert(verify_request_v2(extension));
 
-    free_byte_array(my_signed_msg);
-    free_byte_array(victim_signed_msg);
-    free_byte_array(padded_victim_msg);
-    free_byte_array(xor);
-    free_byte_array(extension);
+    free_byte_arrays(my_signed_msg, victim_signed_msg, padded_victim_msg, xor, extension, NO_BA);
     cleanup_serverclient();
 }

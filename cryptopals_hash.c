@@ -64,13 +64,8 @@ void test_sha256() {
     assert(byte_arrays_equal(sha256_test3, sha256_test3_answer));
     printf("SHA256 test vectors pass!\n");
 
-    free_byte_array(empty);
-    free_byte_array(abc);
-    free_byte_array(long_string);
-    free_byte_array(sha256_test1);
-    free_byte_array(sha256_test2);
-    free_byte_array(sha256_test3);
-    free_byte_array(sha256_test1_answer);
-    free_byte_array(sha256_test2_answer);
-    free_byte_array(sha256_test3_answer);
+    free_byte_arrays(empty, abc, long_string,
+                     sha256_test1, sha256_test2, sha256_test3,
+                     sha256_test1_answer, sha256_test2_answer,
+                     sha256_test3_answer, NO_BA);
 }
