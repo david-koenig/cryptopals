@@ -18,8 +18,7 @@ int main(int argc, char ** argv) {
     printf("MAC: ");
     print_byte_array(mac);
 
-    free_byte_array(message);
-    free_byte_array(mac);
+    free_byte_arrays(message, mac, NO_BA);
     cleanup_random_mac_key();
     return 0;
 }

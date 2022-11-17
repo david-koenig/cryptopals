@@ -24,12 +24,6 @@ int main(int argc, char **argv)
     print_byte_array_ascii(recovered_plain);
 
     cleanup_random_encrypt();
-    free_byte_array(cipher);
-    free_byte_array(plaintext);
-    free_byte_array(key);
-    free_byte_array(ctr_cipher);
-    free_byte_array(zero_plain);
-    free_byte_array(recovered_key_stream);
-    free_byte_array(recovered_plain);
+    free_byte_arrays(cipher, plaintext, key, ctr_cipher, zero_plain, recovered_key_stream, recovered_plain, NO_BA);
     return 0;
 }

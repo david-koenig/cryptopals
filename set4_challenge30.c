@@ -63,8 +63,7 @@ int main(int argc, char ** argv) {
             if (check_message_md4_mac(counterfeit_message, counterfeit_mac)) {
                 broke_the_mac = true;
             }
-            free_byte_array(glue_padding);
-            free_byte_array(counterfeit_message);
+            free_byte_arrays(glue_padding, counterfeit_message, NO_BA);
         } while(!(broke_the_mac || num_blocks_guess != (message.len + ++key_len_guess + 72) >> 6));
 
         // If we are here and broke_the_mac is still false, it means none of the possible key
@@ -74,9 +73,7 @@ int main(int argc, char ** argv) {
     }
     printf("Attack succeeded!\n");
 
-    free_byte_array(message);
-    free_byte_array(mac);
-    free_byte_array(extension);
+    free_byte_arrays(message, mac, extension, NO_BA);
 
     cleanup_random_mac_key();
     return 0;

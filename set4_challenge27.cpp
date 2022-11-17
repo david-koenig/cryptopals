@@ -33,14 +33,7 @@ int main(int argc, char ** argv) {
 
     printf("%s the key!\n", guess_key(key) ? "Cracked" : "Did not crack");
 
-    free_byte_array(cipher);
-    free_byte_array(cipher_1);
-    free_byte_array(zero_block);
-    free_byte_array(spoof_cipher);
-    free_byte_array(spoof_decrypt);
-    free_byte_array(plain_1);
-    free_byte_array(plain_3);
-    free_byte_array(key);
+    free_byte_arrays(cipher, cipher_1, zero_block, spoof_cipher, spoof_decrypt, plain_1, plain_3, key, NO_BA);
 
     cleanup_random_encrypt();
     return 0;
