@@ -383,9 +383,10 @@ byte_array edit_ciphertext_aes_128_ctr(const byte_array cipher, const byte_array
 
     size_t skip_bytes = offset % block_size;
     size_t new_plain_idx;
-    for (new_plain_idx = 0; new_plain_idx <= new_plain.len ; ++new_plain_idx) {
+    for (new_plain_idx = 0; new_plain_idx < new_plain.len ; ++new_plain_idx) {
         new_cipher.bytes[offset + new_plain_idx] = new_plain.bytes[new_plain_idx] ^ key_stream_out.bytes[skip_bytes + new_plain_idx];
     }
     free_byte_arrays(key_stream_in, key_stream_out, NO_BA);
+    EVP_CIPHER_CTX_free(ctx);
     return new_cipher;
 }
