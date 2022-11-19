@@ -39,10 +39,7 @@ int main(int argc, char **argv)
     }
 
     cleanup_openssl();
-    free_byte_array(key);
-    free_byte_array(plaintext);
-    free_byte_array(cipher);
-    free_byte_array(plain2);
+    free_byte_arrays(key, plaintext, cipher, plain2, NO_BA);
 
     return ret;
 }

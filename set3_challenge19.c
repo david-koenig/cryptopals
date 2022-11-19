@@ -204,8 +204,7 @@ int main(int argc, char ** argv) {
     }
 
     for (idx = 0 ; idx < num_plaintexts ; ++idx) {
-        free_byte_array(ciphertexts[idx]);
-        free_byte_array(plaintext_guesses[idx]);
+        free_byte_arrays(ciphertexts[idx], plaintext_guesses[idx], NO_BA);
     }
     free(byte_freq);
     cleanup_random_encrypt();

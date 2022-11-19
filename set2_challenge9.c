@@ -14,7 +14,6 @@ int main(int argc, char ** argv) {
     print_byte_array(ba);
     printf("Padded byte array:\t0x");
     print_byte_array(padded_ba);
-    free_byte_array(ba);
-    free_byte_array(padded_ba);
+    free_byte_arrays(ba, padded_ba, NO_BA);
     return 0;
 }

@@ -33,7 +33,7 @@ int main(int argc, char ** argv) {
     init_random_encrypt(atoi(argv[2]));
 
     size_t num_plaintexts;
-    byte_array* plaintexts = base64_each_line_to_bytes(&num_plaintexts, argv[1]);
+    byte_array * plaintexts = base64_each_line_to_bytes(&num_plaintexts, argv[1]);
     byte_array ciphertexts[num_plaintexts];
     size_t shortest_cipher_len = 9999;
 
@@ -51,8 +51,7 @@ int main(int argc, char ** argv) {
         byte_array recovered_plain = xor_byte_arrays(NO_BA, recovered_key, ciphertexts[idx]);
         printf("%2li: ", idx);
         print_byte_array_ascii(recovered_plain);
-        free_byte_array(recovered_plain);
-        free_byte_array(ciphertexts[idx]);
+        free_byte_arrays(recovered_plain, ciphertexts[idx], NO_BA);
     }
     free_byte_array(recovered_key);
     cleanup_random_encrypt();
